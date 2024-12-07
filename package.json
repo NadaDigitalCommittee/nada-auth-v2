@@ -1,14 +1,30 @@
 {
-  "name": "nada-auth-v2",
-  "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify"
-  },
-  "dependencies": {
-    "hono": "^4.6.13"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241112.0",
-    "wrangler": "^3.88.0"
-  }
+    "name": "nada-auth-v2",
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy --minify",
+        "lint-staged": "lint-staged",
+        "prepare": "husky"
+    },
+    "lint-staged": {
+        "*.{js,mjs,cjs,ts}": [
+            "prettier --write",
+            "eslint"
+        ]
+    },
+    "dependencies": {
+        "hono": "^4.6.13"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20241112.0",
+        "@eslint/js": "^9.16.0",
+        "eslint": "^9.16.0",
+        "eslint-config-prettier": "^9.1.0",
+        "globals": "^15.13.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^15.2.10",
+        "prettier": "^3.4.2",
+        "typescript-eslint": "^8.17.0",
+        "wrangler": "^3.88.0"
+    }
 }
