@@ -14,7 +14,7 @@ sequenceDiagram
     participant discord as Discordサーバー
     actor user as ユーザー
 
-    admin->>+app: /config update
+    admin->>+app: /config set
     app->>+KV: 設定更新
     admin->>+app: /post-rules
     app-->>+discord: ルールとボタンを送信
