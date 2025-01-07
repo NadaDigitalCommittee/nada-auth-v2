@@ -1,0 +1,20 @@
+diff --git a/source/split.d.ts b/source/split.d.ts
+index d7b5d71c849d6490cda794fa9ff5c20f12cc71af..92c8a4e753fe3a045b292f5d004094262537b7c2 100644
+--- a/source/split.d.ts
++++ b/source/split.d.ts
+@@ -22,8 +22,10 @@ array = split(items, ',');
+ export type Split<
+ 	S extends string,
+ 	Delimiter extends string,
+-> = S extends `${infer Head}${Delimiter}${infer Tail}`
+-	? [Head, ...Split<Tail, Delimiter>]
+-	: S extends Delimiter
+-		? []
+-		: [S];
++> = string extends S ? string[]
++	: S extends `${infer Head}${Delimiter}${infer Tail}`
++		? [Head, ...Split<Tail, Delimiter>]
++		: S extends Delimiter
++			? []
++			: [S];
++

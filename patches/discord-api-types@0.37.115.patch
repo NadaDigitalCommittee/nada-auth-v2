@@ -1,0 +1,30 @@
+diff --git a/payloads/v10/user.d.ts b/payloads/v10/user.d.ts
+index a776d0107ee286e22d5840e3409930cbc6114299..2975e7d2b0659c5c79dbb0ea524c78945363f62d 100644
+--- a/payloads/v10/user.d.ts
++++ b/payloads/v10/user.d.ts
+@@ -100,6 +100,10 @@ export interface APIUser {
+  * https://discord.com/developers/docs/resources/user#user-object-user-flags
+  */
+ export declare enum UserFlags {
++    /**
++     * @unstable This user flag is currently not documented by Discord and is not supported by discord.js.
++     */
++    None = 0,
+     /**
+      * Discord Employee
+      */
+diff --git a/payloads/v10/user.js b/payloads/v10/user.js
+index ab3f3fd2e2eff3911ffaaac266c2e0df7193b220..76fbbbd99c24912a4474d031dcc89399cc25811c 100644
+--- a/payloads/v10/user.js
++++ b/payloads/v10/user.js
+@@ -9,6 +9,10 @@ exports.ConnectionVisibility = exports.ConnectionService = exports.UserPremiumTy
+  */
+ var UserFlags;
+ (function (UserFlags) {
++    /**
++     * @unstable This user flag is currently not documented by Discord and is not supported by discord.js.
++     */
++    UserFlags[UserFlags["None"] = 0] = "None";
+     /**
+      * Discord Employee
+      */

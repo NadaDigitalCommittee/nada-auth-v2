@@ -1,0 +1,27 @@
+diff --git a/build/src/crypto/node/crypto.js b/build/src/crypto/node/crypto.js
+index 26ede463f7d7abc55676ea17fe94cc7d6ce17577..16af82d082ae0bdfcc8e1c408e3829b6b8a17616 100644
+--- a/build/src/crypto/node/crypto.js
++++ b/build/src/crypto/node/crypto.js
+@@ -14,7 +14,7 @@
+ // limitations under the License.
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.NodeCrypto = void 0;
+-const crypto = require("crypto");
++const crypto = require("crypto-browserify");
+ class NodeCrypto {
+     async sha256DigestBase64(str) {
+         return crypto.createHash('sha256').update(str).digest('base64');
+diff --git a/package.json b/package.json
+index 2bc32c04e67a18b24cab0a0219a59882bfdcdc76..514f94c793be90ce0d1620c688bd9d6159f20b50 100644
+--- a/package.json
++++ b/package.json
+@@ -22,7 +22,8 @@
+     "gaxios": "^6.1.1",
+     "gcp-metadata": "^6.1.0",
+     "gtoken": "^7.0.0",
+-    "jws": "^4.0.0"
++    "jws": "^4.0.0",
++    "crypto-browserify": "^3.12.1"
+   },
+   "devDependencies": {
+     "@types/base64-js": "^1.2.5",

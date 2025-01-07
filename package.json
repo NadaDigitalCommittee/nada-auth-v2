@@ -1,32 +1,52 @@
 {
     "name": "nada-auth-v2",
     "scripts": {
-        "dev": "wrangler dev",
+        "dev": "wrangler dev --live-reload --env=dev",
         "deploy": "wrangler deploy --minify",
+        "prebuild": "bun run ./src/scripts/register.ts",
+        "prebuild-dev": "bun --env-file=./.dev.vars run ./src/scripts/register.ts",
         "lint-staged": "lint-staged",
         "tsc": "tsc",
         "prepare": "husky"
     },
     "lint-staged": {
-        "*.{js,mjs,cjs,ts}": [
+        "*.{js,mjs,cjs,ts,tsx}": [
             "prettier --write",
             "eslint"
         ]
     },
     "dependencies": {
-        "hono": "^4.6.13"
+        "@discordjs/rest": "^2.4.2",
+        "@hono/valibot-validator": "^0.5.1",
+        "crypto-browserify": "^3.12.1",
+        "discord-api-types": "^0.37.115",
+        "discord-hono": "^0.9.3",
+        "google-auth-library": "^9.15.0",
+        "hono": "^4.6.16",
+        "valibot": "^1.0.0-beta.11",
+        "whatwg-mimetype": "^4.0.0"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20241112.0",
-        "@eslint/js": "^9.16.0",
-        "eslint": "^9.16.0",
+        "@cloudflare/workers-types": "^4.20241230.0",
+        "@eslint/js": "^9.17.0",
+        "@trivago/prettier-plugin-sort-imports": "^5.2.1",
+        "@types/bun": "^1.1.15",
+        "@types/whatwg-mimetype": "^3.0.2",
+        "eslint": "^9.17.0",
         "eslint-config-prettier": "^9.1.0",
-        "globals": "^15.13.0",
+        "eslint-plugin-import-access": "^2.2.2",
+        "globals": "^15.14.0",
         "husky": "^9.1.7",
-        "lint-staged": "^15.2.10",
+        "lint-staged": "^15.3.0",
         "prettier": "^3.4.2",
+        "type-fest": "^4.31.0",
         "typescript": "^5.7.2",
-        "typescript-eslint": "^8.17.0",
-        "wrangler": "^3.93.0"
+        "typescript-eslint": "^8.19.1",
+        "wrangler": "^3.99.0"
+    },
+    "patchedDependencies": {
+        "discord-api-types@0.37.115": "patches/discord-api-types@0.37.115.patch",
+        "google-auth-library@9.15.0": "patches/google-auth-library@9.15.0.patch",
+        "type-fest@4.31.0": "patches/type-fest@4.31.0.patch"
     }
 }

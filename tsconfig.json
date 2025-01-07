@@ -5,10 +5,15 @@
         "moduleResolution": "Bundler",
         "strict": true,
         "skipLibCheck": true,
+        "verbatimModuleSyntax": true,
         "lib": ["ESNext"],
-        "types": ["@cloudflare/workers-types/2023-07-01"],
+        "types": ["@cloudflare/workers-types/2023-07-01", "bun"],
         "jsx": "react-jsx",
         "jsxImportSource": "hono/jsx",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
         "noEmit": true
     }
 }
