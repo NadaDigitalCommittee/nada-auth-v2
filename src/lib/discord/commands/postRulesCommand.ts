@@ -23,7 +23,7 @@ import MIMEType from "whatwg-mimetype"
 
 import { DISCORD_MESSAGE_MAX_LENGTH } from "../constants"
 import type { CommandHandler } from "../types"
-import { prettifyOptionValue, serverRulesWebhookAvatarUrlOf } from "../utils"
+import { serverRulesWebhookAvatarUrlOf } from "../utils"
 
 import { Components as CustomComponents } from "@/lib/discord"
 import type { Env } from "@/lib/schema/env"
@@ -67,7 +67,6 @@ export const handler: CommandHandler<Env> = async (c) => {
     if (!isChatInputApplicationCommandInteraction(interaction))
         return c.res(":x: このコマンドはサポートされていません。")
     const {
-        guild_id: guildId,
         data: { options, resolved },
     } = interaction
     const getOption = (optionName: string) => options?.find((option) => option.name === optionName)
@@ -112,11 +111,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         const error = webhook
         console.error(error)
         return c.res(
-            `:x: チャンネル ${prettifyOptionValue(
-                channelOption.value,
-                ApplicationCommandOptionType.Channel,
-                { guildId },
-            )} に Webhook を作成することができませんでした。`,
+            `:x: チャンネル <#${channelOption.value}> に Webhook を作成することができませんでした。`,
         )
     }
 

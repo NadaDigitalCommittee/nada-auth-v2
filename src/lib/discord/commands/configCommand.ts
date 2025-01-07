@@ -121,7 +121,7 @@ const configSetOptionValueTypeOf = Object.fromEntries(
     ),
 )
 
-const generateConfigTableEmbed = (config: ValueOf<GuildConfigRecord>, guildId: string) =>
+const generateConfigTableEmbed = (config: ValueOf<GuildConfigRecord>) =>
     new Embed().fields(
         ...Object.entries(config).reduce((acc, cur) => {
             const isInternalConfigEntry = (
@@ -134,7 +134,6 @@ const generateConfigTableEmbed = (config: ValueOf<GuildConfigRecord>, guildId: s
                 acc.push({
                     name: optionName,
                     value: prettifyOptionValue(optionValue, optionValueType, {
-                        guildId,
                         defaultValue: "-# なし",
                     }),
                     inline: true,
@@ -190,7 +189,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     // TODO: ネストを浅くする
     switch (c.sub.string) {
         case "get":
-            return c.res({ embeds: [generateConfigTableEmbed(guildConfig, guildId)] })
+            return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
         case "set authenticated-role":
         case "set logging-channel":
         case "set nickname": {
@@ -227,11 +226,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                         const error = webhook
                         console.error(error)
                         return c.res(
-                            `:x: チャンネル ${prettifyOptionValue(
-                                subcommandOptionOptionValue,
-                                ApplicationCommandOptionType.Channel,
-                                { guildId },
-                            )} に Webhook を作成することができませんでした。`,
+                            `:x: チャンネル <#${subcommandOptionOptionValue}> に Webhook を作成することができませんでした。`,
                         )
                     }
                     guildConfig._loggingWebhook = webhook
@@ -246,7 +241,7 @@ export const handler: CommandHandler<Env> = async (c) => {
             await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
             return c.res({
                 content: ":white_check_mark: サーバー設定が更新されました。",
-                embeds: [generateConfigTableEmbed(guildConfig, guildId)],
+                embeds: [generateConfigTableEmbed(guildConfig)],
             })
         }
         default:

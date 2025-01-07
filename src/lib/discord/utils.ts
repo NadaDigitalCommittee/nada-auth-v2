@@ -10,11 +10,7 @@ type BuildPrettifyOptionValueArgsType<T extends PrettifyOptionValueArgsTypeBase>
     infer V0,
     infer V1 extends keyof typeof ApplicationCommandOptionType,
 ]
-    ? [
-          V0 | null,
-          (typeof ApplicationCommandOptionType)[V1],
-          { guildId: string; defaultValue?: string },
-      ]
+    ? [V0 | null, (typeof ApplicationCommandOptionType)[V1], { defaultValue?: string }?]
     : never
 
 /**
@@ -27,7 +23,7 @@ export const prettifyOptionValue = (
         additionalData,
     ]: BuildPrettifyOptionValueArgsType<PrettifyOptionValueArgsTypeBase>
 ): string => {
-    if (optionValue == null) return additionalData.defaultValue ?? "null"
+    if (optionValue == null) return additionalData?.defaultValue ?? "null"
     switch (optionValueType) {
         case ApplicationCommandOptionType.String:
         case ApplicationCommandOptionType.Integer:
@@ -35,7 +31,7 @@ export const prettifyOptionValue = (
         case ApplicationCommandOptionType.Boolean:
             return `${optionValue}`
         case ApplicationCommandOptionType.Channel:
-            return `https://discord.com/channels/${additionalData.guildId}/${optionValue}`
+            return `<#${optionValue}>`
         case ApplicationCommandOptionType.Role:
             return `<@&${optionValue}>`
         case ApplicationCommandOptionType.User:
