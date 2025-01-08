@@ -152,7 +152,6 @@ export const handler: CommandHandler<Env> = async (c) => {
     // mountするとvarが空になる？
     // const { rest } = c.var
     const rest = new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN)
-    console.log(c)
     // TODO: DiscordHonoBase.fetchを修正
     const interaction = c.interaction as APIApplicationCommandInteraction
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")

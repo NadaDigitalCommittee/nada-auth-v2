@@ -40,6 +40,7 @@ export default tseslint.config(
                     allowArray: false,
                 },
             ],
+            "no-console": ["error", { allow: ["warn", "error"] }],
         },
     },
     {
