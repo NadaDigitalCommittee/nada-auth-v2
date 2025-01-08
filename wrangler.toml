@@ -8,6 +8,9 @@ directory = "public"
 binding = "ASSETS"
 experimental_serve_directly = false
 
+[vars]
+WORKER_ENV = "production"
+
 [[kv_namespaces]]
 binding = "GuildConfigs"
 id = "c89441ee2d454da3bba25c9ef3b5a849"
@@ -17,6 +20,21 @@ binding = "AuthNRequests"
 id = "3d055498d36c4cce8f87feb19ee1a0f1"
 
 [[kv_namespaces]]
+binding = "Sessions"
+id = "8d9392625ca04727a87a5ddf09a2b459"
+
+[env.dev.vars]
+WORKER_ENV = "development"
+
+[[env.dev.kv_namespaces]]
+binding = "GuildConfigs"
+id = "c89441ee2d454da3bba25c9ef3b5a849"
+
+[[env.dev.kv_namespaces]]
+binding = "AuthNRequests"
+id = "3d055498d36c4cce8f87feb19ee1a0f1"
+
+[[env.dev.kv_namespaces]]
 binding = "Sessions"
 id = "8d9392625ca04727a87a5ddf09a2b459"
 
