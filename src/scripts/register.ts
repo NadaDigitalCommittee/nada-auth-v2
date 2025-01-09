@@ -5,6 +5,7 @@ import { Commands } from "@/lib/discord"
 import { $EnvVars } from "@/lib/schema/env"
 
 const env = v.parse($EnvVars, Bun.env)
+// eslint-disable-next-line no-console
 console.log("Registering commands...")
 await register(
     Object.values(Commands).map((c) => c.command),
