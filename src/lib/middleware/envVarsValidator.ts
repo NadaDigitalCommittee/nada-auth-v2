@@ -14,7 +14,7 @@ export const envVarsValidator = createMiddleware<Env>(async (c, next) => {
             error: {
                 name: "ValiError",
                 issues: envVarsParseResult.issues.map((issue) => ({
-                    message: issue.message,
+                    expected: issue.expected,
                     dotPath: v.getDotPath(issue),
                 })),
             },
