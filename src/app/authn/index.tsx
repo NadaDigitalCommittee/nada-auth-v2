@@ -12,6 +12,7 @@ import type { FC } from "hono/jsx"
 import * as v from "valibot"
 
 import type { AppType } from "@/app"
+import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/kvNamespaces"
 import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
@@ -67,10 +68,14 @@ const app = new Hono<Env>().get(
         )
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) {
-            console.error(new v.ValiError(sessionParseResult.issues))
+            await reportErrorWithContext(new v.ValiError(sessionParseResult.issues), {}, c.env)
             return c.html(<Layout>セッションが無効です。</Layout>)
         }
         const session = sessionParseResult.output
+        const errorContext = {
+            guildId: session.guildId,
+            user: session.user,
+        } as const satisfies ErrorContext
         const originalInteractionResRoute = Routes.webhookMessage(
             c.env.DISCORD_APPLICATION_ID,
             session.interactionToken,
@@ -78,9 +83,10 @@ const app = new Hono<Env>().get(
         )
         const originalResponse = (await rest
             .get(originalInteractionResRoute)
-            .catch(
-                (e: unknown) => (console.error(e), null),
-            )) as RESTPatchAPIWebhookWithTokenMessageResult | null
+            .catch(async (e: unknown) => {
+                if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                return null
+            })) as RESTPatchAPIWebhookWithTokenMessageResult | null
         if (originalResponse?.components?.length) {
             await rest
                 .patch(originalInteractionResRoute, {
@@ -89,7 +95,9 @@ const app = new Hono<Env>().get(
                         components: [],
                     } satisfies RESTPatchAPIWebhookWithTokenMessageJSONBody,
                 })
-                .catch(console.error)
+                .catch(async (e: unknown) => {
+                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                })
         }
         const honoClient = hc<AppType>(new URL(c.req.url).origin)
         const apiOAuthUrl: URL = honoClient.api.oauth.$url()

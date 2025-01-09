@@ -25,7 +25,7 @@ import * as v from "valibot"
 
 import { configSetOptionNameOf, guildConfigInit, guildConfigKvKeyOf } from "../constants"
 import type { CommandHandler } from "../types"
-import { prettifyOptionValue } from "../utils"
+import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type GuildConfigRecord } from "@/lib/schema/kvNamespaces"
@@ -159,8 +159,15 @@ export const handler: CommandHandler<Env> = async (c) => {
         return c.res(":x: このコマンドはサポートされていません。")
     const {
         guild_id: guildId,
+        member,
         data: { options = [] },
     } = interaction
+    const errorContext = {
+        guildId,
+        member,
+        path: "Commands.config.handler",
+        subcommandString: c.sub.string,
+    } as const satisfies ErrorContext
     const rawGuildConfig = await wrapWithTryCatchAsync(
         // NOTE: 型と値が乖離するのでジェネリクスはつけない
         async () => await guildConfigRecord.get(guildId, "json"),
@@ -169,7 +176,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {
         const error = rawGuildConfig
-        console.error(error)
+        await reportErrorWithContext(error, errorContext, c.env)
         await guildConfigRecord.delete(guildId)
         return c.res(
             ":x: 設定データが正しい形式ではなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
@@ -177,7 +184,11 @@ export const handler: CommandHandler<Env> = async (c) => {
     }
     const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
     if (!guildConfigParseResult.success) {
-        console.error(new v.ValiError(guildConfigParseResult.issues))
+        await reportErrorWithContext(
+            new v.ValiError(guildConfigParseResult.issues),
+            errorContext,
+            c.env,
+        )
         await guildConfigRecord.delete(guildId)
         return c.res(
             ":x: 設定データが正しい形式ではなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
@@ -221,7 +232,11 @@ export const handler: CommandHandler<Env> = async (c) => {
                     oldWebhook &&
                     (await rest
                         .delete(Routes.webhook(oldWebhook.id, oldWebhook.token))
-                        .catch(console.error))
+                        .catch(async (e: unknown) => {
+                            if (e instanceof Error) {
+                                await reportErrorWithContext(e, errorContext, c.env)
+                            }
+                        }))
                 )
                 if (subcommandOptionOptionValue) {
                     const newWebhook = (await rest
@@ -236,7 +251,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                         | TypeError
                     if (newWebhook instanceof Error) {
                         const error = newWebhook
-                        console.error(error)
+                        await reportErrorWithContext(error, errorContext, c.env)
                         return c.res(
                             `:x: チャンネル <#${subcommandOptionOptionValue}> に Webhook を作成することができませんでした。`,
                         )

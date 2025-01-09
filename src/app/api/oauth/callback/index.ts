@@ -13,7 +13,11 @@ import { deleteCookie } from "hono/cookie"
 import * as v from "valibot"
 
 import { guildConfigInit } from "@/lib/discord/constants"
-import { loggingWebhookAvatarUrlOf } from "@/lib/discord/utils"
+import {
+    type ErrorContext,
+    loggingWebhookAvatarUrlOf,
+    reportErrorWithContext,
+} from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, $Session, $SessionId } from "@/lib/schema/kvNamespaces"
 import { $TokenPayload } from "@/lib/schema/tokenPayload"
@@ -68,6 +72,10 @@ const app = new Hono<Env>().get(
         if (!(session.state && session.nonce)) return c.text("Unauthorized", 401)
         if (state !== session.state) return c.text("Unauthorized", 401)
 
+        const errorContext = {
+            guildId: session.guildId,
+            user: session.user,
+        } as const satisfies ErrorContext
         const originalInteractionResRoute = Routes.webhookMessage(
             c.env.DISCORD_APPLICATION_ID,
             session.interactionToken,
@@ -76,7 +84,11 @@ const app = new Hono<Env>().get(
         const editOriginal = async (
             body: RESTPatchAPIWebhookWithTokenMessageJSONBody,
         ): Promise<void> =>
-            void (await rest.patch(originalInteractionResRoute, { body }).catch(console.error))
+            void (await rest
+                .patch(originalInteractionResRoute, { body })
+                .catch(async (e: unknown) => {
+                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                }))
         const rawGuildConfig = await wrapWithTryCatchAsync(
             async () => await guildConfigRecord.get(session.guildId, "json"),
         )
@@ -173,7 +185,9 @@ const app = new Hono<Env>().get(
                             ],
                         } satisfies RESTPostAPIWebhookWithTokenJSONBody,
                     })
-                    .catch(console.error)
+                    .catch(async (e: unknown) => {
+                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                    })
             }
             return c.text("Forbidden", 403)
         }
@@ -201,7 +215,9 @@ const app = new Hono<Env>().get(
                             ],
                         } satisfies RESTPostAPIWebhookWithTokenJSONBody,
                     })
-                    .catch(console.error)
+                    .catch(async (e: unknown) => {
+                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                    })
             }
             await rest
                 .patch(Routes.guildMember(session.guildId, session.user.id), {
@@ -210,7 +226,7 @@ const app = new Hono<Env>().get(
                     } satisfies RESTPatchAPIGuildMemberJSONBody,
                 })
                 .catch(async (e: unknown) => {
-                    console.error(e)
+                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                     if (loggingWebhook) {
                         await rest
                             .post(Routes.webhook(loggingWebhook.id, loggingWebhook.token), {
@@ -231,7 +247,10 @@ const app = new Hono<Env>().get(
                                     ],
                                 } satisfies RESTPostAPIWebhookWithTokenJSONBody,
                             })
-                            .catch(console.error)
+                            .catch(async (e: unknown) => {
+                                if (e instanceof Error)
+                                    await reportErrorWithContext(e, errorContext, c.env)
+                            })
                     }
                 })
         }
@@ -245,7 +264,7 @@ const app = new Hono<Env>().get(
                     ),
                 )
                 .catch(async (e: unknown) => {
-                    console.error(e)
+                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                     if (loggingWebhook) {
                         await rest
                             .post(Routes.webhook(loggingWebhook.id, loggingWebhook.token), {
@@ -266,7 +285,10 @@ const app = new Hono<Env>().get(
                                     ],
                                 } satisfies RESTPostAPIWebhookWithTokenJSONBody,
                             })
-                            .catch(console.error)
+                            .catch(async (e: unknown) => {
+                                if (e instanceof Error)
+                                    await reportErrorWithContext(e, errorContext, c.env)
+                            })
                     }
                 })
         }
@@ -320,7 +342,9 @@ const app = new Hono<Env>().get(
                         ],
                     } satisfies RESTPostAPIWebhookWithTokenJSONBody,
                 })
-                .catch(console.error)
+                .catch(async (e: unknown) => {
+                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                })
         }
         await editOriginal({
             content: ":white_check_mark: 認証が完了しました。",

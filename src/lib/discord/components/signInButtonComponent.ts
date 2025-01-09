@@ -18,6 +18,7 @@ import {
     sessionExpirationTtlDev,
 } from "../constants"
 import type { ComponentHandler } from "../types"
+import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { AppType } from "@/app"
 import type { Env } from "@/lib/schema/env"
@@ -44,17 +45,19 @@ export const handler: ComponentHandler<Env> = async (c) => {
     const sessionRecord = c.env.Sessions
     const interaction = c.interaction as unknown as APIMessageComponentButtonInteraction
     if (!isGuildInteraction(interaction)) return c.res("この機能はサーバーでのみ使用できます。")
-    const {
-        guild_id: guildId,
-        member: { user },
-        token: interactionToken,
-    } = interaction
+    const { guild_id: guildId, member, token: interactionToken } = interaction
+    const { user } = member
+    const errorContext = {
+        guildId,
+        member,
+        path: "Components.signInButton.handler",
+    } as const satisfies ErrorContext
     const rawGuildConfig = await wrapWithTryCatchAsync(
         async () => await guildConfigRecord.get(guildId, "json"),
     )
     if (rawGuildConfig instanceof Error) {
         const error = rawGuildConfig
-        console.error(error)
+        await reportErrorWithContext(error, errorContext, c.env)
         return c
             .ephemeral(true)
             .res(
@@ -63,7 +66,11 @@ export const handler: ComponentHandler<Env> = async (c) => {
     }
     const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
     if (!guildConfigParseResult.success) {
-        console.error(new v.ValiError(guildConfigParseResult.issues))
+        await reportErrorWithContext(
+            new v.ValiError(guildConfigParseResult.issues),
+            errorContext,
+            c.env,
+        )
         return c
             .ephemeral(true)
             .res(

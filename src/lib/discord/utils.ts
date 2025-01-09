@@ -1,4 +1,15 @@
-import { ApplicationCommandOptionType } from "discord-api-types/v10"
+import { REST } from "@discordjs/rest"
+import {
+    type APIGuildMember,
+    type APIUser,
+    ApplicationCommandOptionType,
+    type RESTGetAPIGuildPreviewResult,
+    Routes,
+    type Snowflake,
+} from "discord-api-types/v10"
+
+import type { Env } from "../schema/env"
+import type { InteractionsNSPath } from "./structure"
 
 type PrettifyOptionValueArgsTypeBase =
     | [string, "String" | "Role" | "User"]
@@ -61,3 +72,29 @@ export const loggingWebhookAvatarUrlOf = (urlWithOrigin: string | URL) =>
 
 export const serverRulesWebhookAvatarUrlOf = (urlWithOrigin: string | URL) =>
     new AvatarUrl("/assets/u1fa84_u1f4e3.webp").getUrl(urlWithOrigin)
+
+export interface ErrorContext {
+    guildId?: Snowflake
+    member?: APIGuildMember
+    user?: APIUser
+    path?: InteractionsNSPath
+    [key: string]: unknown
+}
+export const reportErrorWithContext = async (
+    error: Error,
+    context: ErrorContext,
+    env: Env["Bindings"],
+) => {
+    const rest = new REST({ version: "10" }).setToken(env.DISCORD_TOKEN)
+    const guildPreview =
+        context.guildId &&
+        ((await rest
+            .get(Routes.guildPreview(context.guildId))
+            .catch(
+                (e: unknown) => (console.error(e), null),
+            )) as RESTGetAPIGuildPreviewResult | null)
+    console.error({
+        error,
+        context: { ...context, guild: guildPreview },
+    })
+}
