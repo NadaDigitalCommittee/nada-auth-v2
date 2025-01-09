@@ -209,9 +209,22 @@ export const handler: CommandHandler<Env> = async (c) => {
                         `:warning: オプション \`${subcommandName}\` に everyone を指定することはできません。`,
                     )
             }
+            if (guildConfig[guildConfigKvKey] === subcommandOptionOptionValue) {
+                return c.res({
+                    content: ":person_shrugging: 変更がありません。",
+                    embeds: [generateConfigTableEmbed(guildConfig)],
+                })
+            }
             if (subcommandName === "logging-channel") {
+                const oldWebhook = guildConfig._loggingWebhook
+                void (
+                    oldWebhook &&
+                    (await rest
+                        .delete(Routes.webhook(oldWebhook.id, oldWebhook.token))
+                        .catch(console.error))
+                )
                 if (subcommandOptionOptionValue) {
-                    const webhook = (await rest
+                    const newWebhook = (await rest
                         .post(Routes.channelWebhooks(subcommandOptionOptionValue), {
                             body: {
                                 name: "nada-auth logging",
@@ -221,19 +234,14 @@ export const handler: CommandHandler<Env> = async (c) => {
                         | RESTPostAPIChannelWebhookResult
                         | DiscordAPIError
                         | TypeError
-                    if (webhook instanceof Error) {
-                        const error = webhook
+                    if (newWebhook instanceof Error) {
+                        const error = newWebhook
                         console.error(error)
                         return c.res(
                             `:x: チャンネル <#${subcommandOptionOptionValue}> に Webhook を作成することができませんでした。`,
                         )
                     }
-                    guildConfig._loggingWebhook = webhook
-                } else if (guildConfig._loggingWebhook) {
-                    const webhook = guildConfig._loggingWebhook
-                    void (await rest
-                        .delete(Routes.webhook(webhook.id, webhook.token))
-                        .catch(console.error))
+                    guildConfig._loggingWebhook = newWebhook
                 }
             }
             guildConfig[guildConfigKvKey] = subcommandOptionOptionValue
