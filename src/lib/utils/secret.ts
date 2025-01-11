@@ -1,6 +1,6 @@
-import { encodeBase64Url } from "hono/utils/encode"
+import { Buffer } from "node:buffer"
 
 export const generateSecret = (byteLength: number) => {
     const randomBytes = crypto.getRandomValues(new Uint8Array(byteLength))
-    return encodeBase64Url(randomBytes.buffer).replace(/=+/, "")
+    return Buffer.from(randomBytes.buffer).toString("base64url")
 }
