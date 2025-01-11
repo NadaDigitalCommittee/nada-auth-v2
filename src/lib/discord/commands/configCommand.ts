@@ -247,8 +247,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                         | DiscordAPIError
                         | TypeError
                     if (newWebhook instanceof Error) {
-                        const error = newWebhook
-                        await reportErrorWithContext(error, errorContext, c.env)
+                        await reportErrorWithContext(newWebhook, errorContext, c.env)
                         return c.res(
                             `:x: チャンネル <#${subcommandOptionOptionValue}> に Webhook を作成することができませんでした。`,
                         )
