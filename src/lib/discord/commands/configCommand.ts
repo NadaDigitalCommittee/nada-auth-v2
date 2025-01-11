@@ -168,10 +168,8 @@ export const handler: CommandHandler<Env> = async (c) => {
         path: "Commands.config.handler",
         subcommandString: c.sub.string,
     } as const satisfies ErrorContext
-    const rawGuildConfig = await wrapWithTryCatchAsync(
-        // NOTE: 型と値が乖離するのでジェネリクスはつけない
-        async () => await guildConfigRecord.get(guildId, "json"),
-    )
+    // NOTE: 型と値が乖離するのでジェネリクスはつけない
+    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(shouldBeError)
     // TODO: エラーメッセージを定数管理
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {

@@ -16,7 +16,7 @@ import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/kvNamespaces"
 import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
-import { wrapWithTryCatchAsync } from "@/lib/utils/exceptions"
+import { shouldBeError } from "@/lib/utils/exceptions"
 
 const Layout: FC = ({ children }) => {
     return (
@@ -63,9 +63,7 @@ const app = new Hono<Env>().get(
         if (!sessionId) {
             return c.html(<Layout>トークンが無効です。</Layout>, 400)
         }
-        const rawSession = await wrapWithTryCatchAsync(
-            async () => await sessionRecord.get(sessionId, "json"),
-        )
+        const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) {
             return c.html(<Layout>セッションが無効です。</Layout>)

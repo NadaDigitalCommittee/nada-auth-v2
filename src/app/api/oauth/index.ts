@@ -9,7 +9,7 @@ import { callback } from "./callback"
 import type { Env } from "@/lib/schema/env"
 import { $Session, $SessionId } from "@/lib/schema/kvNamespaces"
 import { sharedCookieNames } from "@/lib/utils/cookie"
-import { wrapWithTryCatchAsync } from "@/lib/utils/exceptions"
+import { shouldBeError } from "@/lib/utils/exceptions"
 import { generateSecret } from "@/lib/utils/secret"
 
 const app = new Hono<Env>()
@@ -24,9 +24,7 @@ const app = new Hono<Env>()
         async (c) => {
             const sessionRecord = c.env.Sessions
             const sessionId = c.req.valid("cookie").sid
-            const rawSession = await wrapWithTryCatchAsync(
-                async () => await sessionRecord.get(sessionId, "json"),
-            )
+            const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
             const sessionParseResult = v.safeParse($Session, rawSession)
             if (!sessionParseResult.success) return c.text("Session Expired", 400)
             const session = sessionParseResult.output

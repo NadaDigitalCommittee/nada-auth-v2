@@ -23,7 +23,7 @@ import { $GuildConfig, $Session, $SessionId } from "@/lib/schema/kvNamespaces"
 import { $TokenPayload } from "@/lib/schema/tokenPayload"
 import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { sharedCookieNames } from "@/lib/utils/cookie"
-import { wrapWithTryCatchAsync } from "@/lib/utils/exceptions"
+import { shouldBeError } from "@/lib/utils/exceptions"
 import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/extractNadaACWorkSpaceUserFromTokenPayload"
 import { formatNickname } from "@/lib/utils/formatNickname"
 
@@ -60,12 +60,8 @@ const app = new Hono<Env>().get(
         deleteCookie(c, sharedCookieNames.sessionId)
         const query = c.req.valid("query")
         const { state } = query
-        const rawSession = await wrapWithTryCatchAsync(
-            async () => await sessionRecord.get(sessionId, "json"),
-        )
-        await wrapWithTryCatchAsync(async () => {
-            await sessionRecord.delete(sessionId)
-        })
+        const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
+        void (await sessionRecord.delete(sessionId).catch(shouldBeError))
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) return c.text("Session Expired", 401)
         const session = sessionParseResult.output
@@ -89,9 +85,9 @@ const app = new Hono<Env>().get(
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                 }))
-        const rawGuildConfig = await wrapWithTryCatchAsync(
-            async () => await guildConfigRecord.get(session.guildId, "json"),
-        )
+        const rawGuildConfig = await guildConfigRecord
+            .get(session.guildId, "json")
+            .catch(shouldBeError)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
             await editOriginal({
