@@ -16,8 +16,8 @@ sequenceDiagram
 
     admin->>+app: /config set
     app->>+KV: 設定更新
-    admin->>+app: /post-rules
-    app-->>+discord: ルールとボタンを送信
+    admin->>+app: /init
+    app-->>+discord: ボタンを設置
     discord-->>+user: ;
     user->>+app: 認証を要求
     app->>+app: リクエストトークン, セッションIDを生成
