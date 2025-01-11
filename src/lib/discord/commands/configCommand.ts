@@ -29,7 +29,7 @@ import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type GuildConfigRecord } from "@/lib/schema/kvNamespaces"
-import { shouldBeError, wrapWithTryCatchAsync } from "@/lib/utils/exceptions"
+import { shouldBeError } from "@/lib/utils/exceptions"
 
 const configSetOptions = [
     {
