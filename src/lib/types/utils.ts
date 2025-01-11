@@ -39,3 +39,7 @@ export type Reverse<T extends unknown[]> = T extends [infer Head, ...infer Tail]
     : []
 
 export type EmptyObject = Record<PropertyKey, never>
+
+export type ReadonlyForEach<T> = {
+    [K in keyof T]: Readonly<T[K]>
+}

@@ -38,3 +38,7 @@ export interface Env extends EnvPrimitive {
     Bindings: { ASSETS: Fetcher } & KVNamespaces & v.InferOutput<typeof $EnvVars>
     Variables: { rest: REST } & UnknownRecord
 }
+export interface UnknownEnv extends EnvPrimitive {
+    Bindings?: Record<string, unknown>
+    Variables?: Record<string, unknown>
+}

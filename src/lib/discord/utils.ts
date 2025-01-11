@@ -70,7 +70,7 @@ export class AvatarUrl {
 export const loggingWebhookAvatarUrlOf = (urlWithOrigin: string | URL) =>
     new AvatarUrl("/assets/u1fa84_u1f525.webp").getUrl(urlWithOrigin)
 
-export const serverRulesWebhookAvatarUrlOf = (urlWithOrigin: string | URL) =>
+export const signInButtonWebhookDefaultAvatarUrlOf = (urlWithOrigin: string | URL) =>
     new AvatarUrl("/assets/u1fa84_u1f4e3.webp").getUrl(urlWithOrigin)
 
 export interface ErrorContext {

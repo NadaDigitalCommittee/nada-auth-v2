@@ -2,7 +2,14 @@ import type { ValueOf } from "type-fest"
 
 import type { GuildConfigRecord } from "@/lib/schema/kvNamespaces"
 
-export const DISCORD_MESSAGE_MAX_LENGTH = 2000
+export const DISCORD_WEBHOOK_NAME_MAX_LENGTH = 80
+
+export const DISCORD_BUTTON_LABEL_MAX_LENGTH = 80
+
+/**
+ * https://discord.com/developers/docs/reference#image-data
+ */
+export const DISCORD_AVATAR_IMAGE_ALLOWED_MIME = /image\/(jpeg|png|gif)/
 
 export const requestTokenExpirationTtl = 60
 

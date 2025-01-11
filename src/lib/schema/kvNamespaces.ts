@@ -8,7 +8,7 @@ export const $GuildConfig = v.object({
     nicknameFormat: v.nullable(v.string()),
     loggingChannelId: v.nullable($Snowflake),
     _loggingWebhook: v.optional($APIWebhook),
-    _serverRulesWebhook: v.optional($APIWebhook),
+    _signInButtonWebhook: v.optional($APIWebhook),
 })
 export const $GuildConfigRecord = v.record($GuildId, $GuildConfig)
 export type GuildConfigRecord = v.InferOutput<typeof $GuildConfigRecord>

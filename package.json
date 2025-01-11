@@ -23,8 +23,7 @@
         "discord-hono": "^0.9.3",
         "google-auth-library": "^9.15.0",
         "hono": "^4.6.16",
-        "valibot": "^1.0.0-beta.11",
-        "whatwg-mimetype": "^4.0.0"
+        "valibot": "^1.0.0-beta.11"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20241230.0",
