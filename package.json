@@ -3,7 +3,7 @@
     "scripts": {
         "dev": "wrangler dev --live-reload --env=dev",
         "deploy": "wrangler deploy --minify",
-        "prebuild": "bun run ./src/scripts/register.ts",
+        "prebuild": "bun --env-file=./.prod.vars run ./src/scripts/register.ts",
         "prebuild-dev": "bun --env-file=./.dev.vars run ./src/scripts/register.ts",
         "lint-staged": "lint-staged",
         "tsc": "tsc",
