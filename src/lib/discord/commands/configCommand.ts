@@ -173,8 +173,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     // TODO: エラーメッセージを定数管理
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {
-        const error = rawGuildConfig
-        await reportErrorWithContext(error, errorContext, c.env)
+        await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
         await guildConfigRecord.delete(guildId)
         return c.res(
             ":x: 設定データが正しい形式ではなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",

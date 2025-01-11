@@ -54,8 +54,7 @@ export const handler: ComponentHandler<Env> = async (c) => {
     } as const satisfies ErrorContext
     const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(shouldBeError)
     if (rawGuildConfig instanceof Error) {
-        const error = rawGuildConfig
-        await reportErrorWithContext(error, errorContext, c.env)
+        await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
         return c
             .ephemeral(true)
             .res(
