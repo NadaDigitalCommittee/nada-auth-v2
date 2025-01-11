@@ -66,7 +66,7 @@ const app = new Hono<Env>().get(
         const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) {
-            return c.html(<Layout>セッションが無効です。</Layout>)
+            return c.html(<Layout>セッションが無効です。</Layout>, 400)
         }
         const session = sessionParseResult.output
         const errorContext = {
