@@ -44,7 +44,7 @@ export const handler: ComponentHandler<Env> = async (c) => {
     const authNRequestRecord = c.env.AuthNRequests
     const sessionRecord = c.env.Sessions
     const interaction = c.interaction as unknown as APIMessageComponentButtonInteraction
-    if (!isGuildInteraction(interaction)) return c.res("この機能はサーバーでのみ使用できます。")
+    if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     const { guild_id: guildId, member, token: interactionToken } = interaction
     const { user } = member
     const errorContext = {

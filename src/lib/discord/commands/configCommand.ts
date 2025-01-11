@@ -176,7 +176,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
         await guildConfigRecord.delete(guildId)
         return c.res(
-            ":x: 設定データが正しい形式ではなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
+            ":x: サーバーの設定データを正しく読み取れなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
         )
     }
     const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
@@ -188,7 +188,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         )
         await guildConfigRecord.delete(guildId)
         return c.res(
-            ":x: 設定データが正しい形式ではなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
+            ":x: サーバーの設定データを正しく読み取れなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
         )
     }
     const guildConfig = guildConfigParseResult.output
