@@ -30,8 +30,8 @@ import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig } from "@/lib/schema/kvNamespaces"
-import { generateDataUrlFromHttpUrl } from "@/lib/utils/dataTransform"
 import { shouldBeError } from "@/lib/utils/exceptions"
+import { generateDataUrlFromHttpUrl } from "@/lib/utils/misc"
 
 /**
  * @package
