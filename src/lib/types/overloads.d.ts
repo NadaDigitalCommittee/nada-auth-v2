@@ -1,6 +1,9 @@
 import type { Split } from "type-fest"
 
-import type { At, Entries, FromEntries, Reverse } from "./utils"
+import type { At } from "./utils/at"
+import type { Entries } from "./utils/entries"
+import type { FromEntries } from "./utils/fromEntries"
+import type { Reverse } from "./utils/reverse"
 
 declare global {
     interface String {

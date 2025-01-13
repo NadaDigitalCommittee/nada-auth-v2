@@ -8,7 +8,7 @@ import type { Commands, Components, Modals } from "."
 import type { CommandHandler, ComponentHandler, ModalHandler } from "./types"
 
 import type { UnknownEnv } from "@/lib/schema/env"
-import type { ReadonlyForEach } from "@/lib/types/utils"
+import type { ReadonlyForEach } from "@/lib/types/utils/readonlyForEach"
 
 type PathTuple<
     T extends Record<string, unknown>,
