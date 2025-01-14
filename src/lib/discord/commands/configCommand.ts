@@ -15,6 +15,8 @@ import {
     InteractionContextType,
     PermissionFlagsBits,
     type RESTDeleteAPIWebhookResult,
+    type RESTPatchAPIWebhookJSONBody,
+    type RESTPatchAPIWebhookResult,
     type RESTPostAPIChannelWebhookJSONBody,
     type RESTPostAPIChannelWebhookResult,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
@@ -30,6 +32,7 @@ import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type GuildConfigRecord } from "@/lib/schema/kvNamespaces"
+import { valuesPairToBitmask } from "@/lib/utils/boolTupleToBitmask"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
 const configSetOptions = [
@@ -230,35 +233,83 @@ export const handler: CommandHandler<Env> = async (c) => {
                 })
             }
             if (subcommandName === "logging-channel") {
-                const oldWebhook = guildConfig._loggingWebhook
-                void (
-                    oldWebhook &&
-                    (await rest
-                        .delete(Routes.webhook(oldWebhook.id, oldWebhook.token))
-                        .catch(async (e: unknown) => {
-                            if (e instanceof Error) {
-                                await reportErrorWithContext(e, errorContext, c.env)
-                            }
-                        }))
+                const { bitmask, bindings } = valuesPairToBitmask(
+                    guildConfig._loggingWebhook,
+                    subcommandOptionOptionValue,
                 )
-                if (subcommandOptionOptionValue) {
-                    const newWebhook = (await rest
-                        .post(Routes.channelWebhooks(subcommandOptionOptionValue), {
-                            body: {
-                                name: "nada-auth logging",
-                            } satisfies RESTPostAPIChannelWebhookJSONBody,
-                        })
-                        .catch(shouldBeError)) as
-                        | RESTPostAPIChannelWebhookResult
-                        | DiscordAPIError
-                        | TypeError
-                    if (newWebhook instanceof Error) {
-                        await reportErrorWithContext(newWebhook, errorContext, c.env)
-                        return c.res(
-                            `:x: チャンネル <#${subcommandOptionOptionValue}> に Webhook を作成することができませんでした。`,
-                        )
+                switch (bitmask) {
+                    case 0b11: {
+                        // すでに Webhook が作成されていて、別のチャンネルに変更される場合
+                        const [loggingWebhook, channelOptionValue] = bindings
+                        const webhookModificationResult = (await rest
+                            .patch(Routes.webhook(loggingWebhook.id), {
+                                body: {
+                                    channel_id: channelOptionValue,
+                                } satisfies RESTPatchAPIWebhookJSONBody,
+                            })
+                            .catch(shouldBeError)) as
+                            | RESTPatchAPIWebhookResult
+                            | DiscordAPIError
+                            | TypeError
+                        if (webhookModificationResult instanceof Error) {
+                            await reportErrorWithContext(
+                                webhookModificationResult,
+                                errorContext,
+                                c.env,
+                            )
+                            return c.res(
+                                `:x: Webhook <@${loggingWebhook.id}> を更新できませんでした。\n理由: \n>>> ${webhookModificationResult.message}`,
+                            )
+                        }
+                        guildConfig._loggingWebhook = webhookModificationResult
+                        break
                     }
-                    guildConfig._loggingWebhook = newWebhook
+                    case 0b10: {
+                        // すでに webhook が作成されていて、それを削除する場合
+                        const [loggingWebhook] = bindings
+                        const webhookDeletionResult = (await rest
+                            .delete(Routes.webhook(loggingWebhook.id))
+                            .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+                            | RESTDeleteAPIWebhookResult
+                            | DiscordAPIError
+                            | TypeError
+                        if (webhookDeletionResult instanceof Error) {
+                            await reportErrorWithContext(webhookDeletionResult, errorContext, c.env)
+                            return c.res(
+                                `:x: Webhook <@${loggingWebhook.id}> を削除できませんでした。\n理由: \n>>> ${webhookDeletionResult.message}`,
+                            )
+                        }
+                        delete guildConfig._loggingWebhook
+                        break
+                    }
+                    case 0b01: {
+                        // webhook がまだ作成されておらず、新たに作る場合
+                        const [, channelOptionValue] = bindings
+                        const webhookCreationResult = (await rest
+                            .post(Routes.channelWebhooks(channelOptionValue), {
+                                body: {
+                                    name: "nada-auth logging",
+                                } satisfies RESTPostAPIChannelWebhookJSONBody,
+                            })
+                            .catch(shouldBeError)) as
+                            | RESTPostAPIChannelWebhookResult
+                            | DiscordAPIError
+                            | TypeError
+                        if (webhookCreationResult instanceof Error) {
+                            await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
+                            return c.res(
+                                `:x: チャンネル <#${channelOptionValue}> に Webhook を作成できませんでした。\n理由: \n>>> ${webhookCreationResult.message}`,
+                            )
+                        }
+                        guildConfig._loggingWebhook = webhookCreationResult
+                        break
+                    }
+                    case 0b00:
+                        // webhook がないがチャンネルの設定が存在し、それを削除しようとしている場合
+                        // guildConfig[guildConfigKvKey] === subcommandOptionOptionValue
+                        // を弾いているので、KVを直接触らない限りありえない？
+                        // この switch の次の処理で logginChannelId は削除されるので、何もしない
+                        break
                 }
             }
             guildConfig[guildConfigKvKey] = subcommandOptionOptionValue
