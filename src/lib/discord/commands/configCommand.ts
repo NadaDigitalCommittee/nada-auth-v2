@@ -14,6 +14,7 @@ import {
     ChannelType,
     InteractionContextType,
     PermissionFlagsBits,
+    type RESTDeleteAPIWebhookResult,
     type RESTPostAPIChannelWebhookJSONBody,
     type RESTPostAPIChannelWebhookResult,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
@@ -100,6 +101,11 @@ export const command = {
             description: "Bot のサーバー設定を変更します。",
             type: ApplicationCommandOptionType.SubcommandGroup,
             options: configSetOptions,
+        },
+        {
+            name: "reset",
+            description: "Bot のサーバー設定を初期化します。",
+            type: ApplicationCommandOptionType.Subcommand,
         },
     ],
 } as const satisfies RESTPostAPIChatInputApplicationCommandsJSONBody
@@ -262,6 +268,52 @@ export const handler: CommandHandler<Env> = async (c) => {
                 embeds: [generateConfigTableEmbed(guildConfig)],
             })
         }
+        case "reset": {
+            // TODO: このあたり共通化する
+            const loggingWebhook = guildConfig._loggingWebhook
+            const loggingWebhookDeletionResult =
+                loggingWebhook &&
+                ((await rest.delete(Routes.webhook(loggingWebhook.id)).catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+                    | RESTDeleteAPIWebhookResult
+                    | DiscordAPIError
+                    | TypeError)
+            if (loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
+                await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
+                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
+:arrow_right_hook: Webhook ${loggingWebhook.id} を削除することができませんでした。
+理由:
+>>> ${loggingWebhookDeletionResult.message}`)
+            }
+            const signInButtonWebhook = guildConfig._signInButtonWebhook
+            const signInButtonWebhookDeletionResult =
+                signInButtonWebhook &&
+                ((await rest
+                    .delete(Routes.webhook(signInButtonWebhook.id))
+                    .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+                    | RESTDeleteAPIWebhookResult
+                    | DiscordAPIError
+                    | TypeError)
+            if (signInButtonWebhook && signInButtonWebhookDeletionResult instanceof Error) {
+                await reportErrorWithContext(signInButtonWebhookDeletionResult, errorContext, c.env)
+                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
+:arrow_right_hook: Webhook ${signInButtonWebhook.id} を削除することができませんでした。
+理由:
+>>> ${signInButtonWebhookDeletionResult.message}`)
+            }
+            const guildConfigDeletionResult = await guildConfigRecord
+                .delete(guildId)
+                .catch(shouldBeError)
+            if (guildConfigDeletionResult instanceof Error) {
+                await reportErrorWithContext(guildConfigDeletionResult, errorContext, c.env)
+                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
+:arrow_right_hook: データを削除できませんでした。`)
+            }
+            return c.res({
+                content: ":white_check_mark: サーバー設定が初期化されました。",
+                embeds: [generateConfigTableEmbed(guildConfigInit)],
+            })
+        }
+
         default:
             return c.res(":x: このサブコマンドはサポートされていません。")
     }
