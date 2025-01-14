@@ -344,7 +344,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                     | RESTDeleteAPIWebhookResult
                     | DiscordAPIError
                     | TypeError)
-            if (forceReset && loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
+            if (!forceReset && loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
                 await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
                 return c.res(`:x: サーバー設定を正常に初期化できませんでした。
 :arrow_right_hook: Webhook <@${loggingWebhook.id}> を削除することができませんでした。
@@ -361,7 +361,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                     | DiscordAPIError
                     | TypeError)
             if (
-                forceReset &&
+                !forceReset &&
                 signInButtonWebhook &&
                 signInButtonWebhookDeletionResult instanceof Error
             ) {
