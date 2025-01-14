@@ -6,6 +6,7 @@ import {
 import {
     type APIApplicationCommandBasicOption,
     type APIApplicationCommandInteraction,
+    type APIApplicationCommandInteractionDataBooleanOption,
     type APIApplicationCommandInteractionDataSubcommandGroupOption,
     type APIApplicationCommandSubcommandOption,
     type APIEmbedField,
@@ -109,6 +110,13 @@ export const command = {
             name: "reset",
             description: "Bot のサーバー設定を初期化します。",
             type: ApplicationCommandOptionType.Subcommand,
+            options: [
+                {
+                    name: "force",
+                    description: "エラーを無視して初期化（既定値: False）",
+                    type: ApplicationCommandOptionType.Boolean,
+                },
+            ],
         },
     ],
 } as const satisfies RESTPostAPIChatInputApplicationCommandsJSONBody
@@ -320,6 +328,14 @@ export const handler: CommandHandler<Env> = async (c) => {
             })
         }
         case "reset": {
+            const [{ options: configResetOptions }] = options as [
+                {
+                    name: string
+                    type: ApplicationCommandOptionType.Subcommand
+                    options: [APIApplicationCommandInteractionDataBooleanOption] | []
+                },
+            ]
+            const forceReset = configResetOptions[0]?.value ?? false
             // TODO: このあたり共通化する
             const loggingWebhook = guildConfig._loggingWebhook
             const loggingWebhookDeletionResult =
@@ -328,7 +344,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                     | RESTDeleteAPIWebhookResult
                     | DiscordAPIError
                     | TypeError)
-            if (loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
+            if (forceReset && loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
                 await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
                 return c.res(`:x: サーバー設定を正常に初期化できませんでした。
 :arrow_right_hook: Webhook <@${loggingWebhook.id}> を削除することができませんでした。
@@ -344,7 +360,11 @@ export const handler: CommandHandler<Env> = async (c) => {
                     | RESTDeleteAPIWebhookResult
                     | DiscordAPIError
                     | TypeError)
-            if (signInButtonWebhook && signInButtonWebhookDeletionResult instanceof Error) {
+            if (
+                forceReset &&
+                signInButtonWebhook &&
+                signInButtonWebhookDeletionResult instanceof Error
+            ) {
                 await reportErrorWithContext(signInButtonWebhookDeletionResult, errorContext, c.env)
                 return c.res(`:x: サーバー設定を正常に初期化できませんでした。
 :arrow_right_hook: Webhook <@${signInButtonWebhook.id}> を削除することができませんでした。
