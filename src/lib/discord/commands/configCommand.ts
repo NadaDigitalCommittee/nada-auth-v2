@@ -331,7 +331,7 @@ export const handler: CommandHandler<Env> = async (c) => {
             if (loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
                 await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
                 return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: Webhook ${loggingWebhook.id} を削除することができませんでした。
+:arrow_right_hook: Webhook <@${loggingWebhook.id}> を削除することができませんでした。
 理由:
 >>> ${loggingWebhookDeletionResult.message}`)
             }
@@ -347,7 +347,7 @@ export const handler: CommandHandler<Env> = async (c) => {
             if (signInButtonWebhook && signInButtonWebhookDeletionResult instanceof Error) {
                 await reportErrorWithContext(signInButtonWebhookDeletionResult, errorContext, c.env)
                 return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: Webhook ${signInButtonWebhook.id} を削除することができませんでした。
+:arrow_right_hook: Webhook <@${signInButtonWebhook.id}> を削除することができませんでした。
 理由:
 >>> ${signInButtonWebhookDeletionResult.message}`)
             }
