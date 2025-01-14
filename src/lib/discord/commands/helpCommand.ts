@@ -95,6 +95,14 @@ const helpDocs = {
                 name: "Missing Permissions というエラーが出てニックネームを変更できない",
                 value: "対象者がサーバー所有者である場合、Discord の仕様上ニックネームを変更することはできません。",
             },
+            {
+                name: "設定データを正しく読み取れないというエラーが出る",
+                value: "/config reset を実行して設定を初期化してみてください。ただし、このコマンドで初期化した設定を復元することはできません。",
+            },
+            {
+                name: "Webhook を更新できない",
+                value: "サーバー設定 > 連携サービス > nada-auth に該当の Webhook が存在する場合、それを削除してみてください。そうでない場合、/config reset を実行して設定を初期化してみてください。ただし、このコマンドで初期化した設定を復元することはできません。",
+            },
         )
         .color(0x00b0f4),
 } as const satisfies Record<string, Embed>
