@@ -1,12 +1,9 @@
-import { CDN, DiscordAPIError } from "@discordjs/rest"
 import { vValidator } from "@hono/valibot-validator"
 import {
     type RESTPatchAPIGuildMemberJSONBody,
     type RESTPatchAPIWebhookWithTokenMessageJSONBody,
-    type RESTPostAPIWebhookWithTokenJSONBody,
     Routes,
 } from "discord-api-types/v10"
-import { Embed } from "discord-hono"
 import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { deleteCookie } from "hono/cookie"
@@ -15,7 +12,8 @@ import * as v from "valibot"
 import { guildConfigInit } from "@/lib/discord/constants"
 import {
     type ErrorContext,
-    loggingWebhookAvatarUrlOf,
+    Logger,
+    getDiscordAPIErrorMessage,
     reportErrorWithContext,
 } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
@@ -97,7 +95,6 @@ const app = new Hono<Env>().get(
             return c.text("Internal Server Error", 500)
         }
         const guildConfig = guildConfigParseResult.output
-        const loggingWebhook = guildConfig._loggingWebhook
         if (query.error !== undefined) {
             await editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
@@ -146,45 +143,30 @@ const app = new Hono<Env>().get(
             })
             return c.text("Unauthorized", 401)
         }
-        // TODO: Loggerクラスをつくる
-        const loggingEmbedBase = () =>
-            new Embed()
-                .author({
-                    name: session.user.username,
-                    icon_url: session.user.avatar
-                        ? new CDN().avatar(session.user.id, session.user.avatar)
-                        : undefined,
-                })
-                .footer({
-                    text: `ID: ${session.user.id}`,
-                })
-                .timestamp(new Date(tokenPayload.iat * 1000).toISOString())
+        const logger = new Logger({
+            context: c,
+            webhook: guildConfig._loggingWebhook,
+            author: session.user,
+            timestampInSeconds: tokenPayload.iat,
+        })
         if (!c.env.ALLOWED_EMAIL_DOMAINS.includes(tokenPayload.hd)) {
             await editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            if (loggingWebhook) {
-                await rest
-                    .post(Routes.webhook(loggingWebhook.id, loggingWebhook.token), {
-                        body: {
-                            avatar_url: loggingWebhookAvatarUrlOf(c.req.url).href,
-                            embeds: [
-                                loggingEmbedBase()
-                                    .title("Failed authentication")
-                                    .fields({
-                                        name: "Reason",
-                                        value: "Email domain not allowed",
-                                    })
-                                    .color(0xda373c)
-                                    .toJSON(),
-                            ],
-                        } satisfies RESTPostAPIWebhookWithTokenJSONBody,
-                    })
-                    .catch(async (e: unknown) => {
-                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    })
-            }
+            await logger
+                .error({
+                    title: "Failed authentication",
+                    fields: [
+                        {
+                            name: "Reason",
+                            value: "Email domain not allowed",
+                        },
+                    ],
+                })
+                .catch(async (e: unknown) => {
+                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                })
             return c.text("Forbidden", 403)
         }
         const nadaACWorkSpaceUser = extractNadaACWorkSpaceUserFromTokenPayload(tokenPayload)
@@ -193,28 +175,17 @@ const app = new Hono<Env>().get(
                 guildConfig.nicknameFormat,
                 nadaACWorkSpaceUser,
             )
-            if (nicknameFormatResult.warnings.length && loggingWebhook) {
-                await rest
-                    .post(Routes.webhook(loggingWebhook.id, loggingWebhook.token), {
-                        body: {
-                            avatar_url: loggingWebhookAvatarUrlOf(c.req.url).href,
-                            embeds: [
-                                loggingEmbedBase()
-                                    .title("Warnings while formatting nickname")
-                                    .description(
-                                        `\`\`\`\n${nicknameFormatResult.warnings
-                                            .map((w) => w.stack)
-                                            .join("\n")}\`\`\``,
-                                    )
-                                    .color(0xffcc00)
-                                    .toJSON(),
-                            ],
-                        } satisfies RESTPostAPIWebhookWithTokenJSONBody,
+            if (nicknameFormatResult.warnings.length)
+                await logger
+                    .warn({
+                        title: "Warnings while formatting nickname",
+                        description: `\`\`\`\n${nicknameFormatResult.warnings
+                            .map((w) => w.stack)
+                            .join("\n")}\`\`\``,
                     })
                     .catch(async (e: unknown) => {
                         if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                     })
-            }
             await rest
                 .patch(Routes.guildMember(session.guildId, session.user.id), {
                     body: {
@@ -223,31 +194,20 @@ const app = new Hono<Env>().get(
                 })
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    if (loggingWebhook) {
-                        await rest
-                            .post(Routes.webhook(loggingWebhook.id, loggingWebhook.token), {
-                                body: {
-                                    avatar_url: loggingWebhookAvatarUrlOf(c.req.url).href,
-                                    embeds: [
-                                        loggingEmbedBase()
-                                            .title("Failed to modify nickname")
-                                            .fields({
-                                                name: "Reason",
-                                                value:
-                                                    e instanceof DiscordAPIError
-                                                        ? e.message
-                                                        : "Unknown Error",
-                                            })
-                                            .color(0xda373c)
-                                            .toJSON(),
-                                    ],
-                                } satisfies RESTPostAPIWebhookWithTokenJSONBody,
-                            })
-                            .catch(async (e: unknown) => {
-                                if (e instanceof Error)
-                                    await reportErrorWithContext(e, errorContext, c.env)
-                            })
-                    }
+                    await logger
+                        .error({
+                            title: "Failed to modify nickname",
+                            fields: [
+                                {
+                                    name: "Reason",
+                                    value: getDiscordAPIErrorMessage(e),
+                                },
+                            ],
+                        })
+                        .catch(async (e: unknown) => {
+                            if (e instanceof Error)
+                                await reportErrorWithContext(e, errorContext, c.env)
+                        })
                 })
         }
         if (guildConfig.authenticatedRoleId) {
@@ -261,87 +221,67 @@ const app = new Hono<Env>().get(
                 )
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    if (loggingWebhook) {
-                        await rest
-                            .post(Routes.webhook(loggingWebhook.id, loggingWebhook.token), {
-                                body: {
-                                    avatar_url: loggingWebhookAvatarUrlOf(c.req.url).href,
-                                    embeds: [
-                                        loggingEmbedBase()
-                                            .title(`Failed to add role`)
-                                            .fields({
-                                                name: "Reason",
-                                                value:
-                                                    e instanceof DiscordAPIError
-                                                        ? e.message
-                                                        : "Unknown Error",
-                                            })
-                                            .color(0xda373c)
-                                            .toJSON(),
-                                    ],
-                                } satisfies RESTPostAPIWebhookWithTokenJSONBody,
-                            })
-                            .catch(async (e: unknown) => {
-                                if (e instanceof Error)
-                                    await reportErrorWithContext(e, errorContext, c.env)
-                            })
-                    }
+                    await logger
+                        .error({
+                            title: "Failed to add role",
+                            fields: [
+                                {
+                                    name: "Reason",
+                                    value: getDiscordAPIErrorMessage(e),
+                                },
+                            ],
+                        })
+                        .catch(async (e: unknown) => {
+                            if (e instanceof Error)
+                                await reportErrorWithContext(e, errorContext, c.env)
+                        })
                 })
         }
-        if (loggingWebhook) {
-            const embedFields = (() => {
-                const { type: userType, data: userData } = nadaACWorkSpaceUser
-                const commonEmbedFields = [
-                    {
-                        name: "名前",
-                        value: `${userData.lastName} ${userData.firstName} (<@${session.user.id}>)`,
-                    },
-                    {
-                        name: "メールアドレス",
-                        value: tokenPayload.email,
-                    },
-                ]
-                switch (userType) {
-                    case NadaAcWorkSpaceUserType.Student: {
-                        return [
-                            {
-                                name: "学年",
-                                value: `${userData.studentType}${userData.grade} (${userData.cohort}回生)`,
-                                inline: true,
-                            },
-                            {
-                                name: "組",
-                                value: `${userData.class}組`,
-                                inline: true,
-                            },
-                            {
-                                name: "出席番号",
-                                value: `${userData.number}番`,
-                                inline: true,
-                            },
-                            ...commonEmbedFields,
-                        ]
-                    }
-                    case NadaAcWorkSpaceUserType.Others:
-                        return commonEmbedFields
+        const embedFields = (() => {
+            const { type: userType, data: userData } = nadaACWorkSpaceUser
+            const commonEmbedFields = [
+                {
+                    name: "名前",
+                    value: `${userData.lastName} ${userData.firstName} (<@${session.user.id}>)`,
+                },
+                {
+                    name: "メールアドレス",
+                    value: userData.email,
+                },
+            ]
+            switch (userType) {
+                case NadaAcWorkSpaceUserType.Student: {
+                    return [
+                        {
+                            name: "学年",
+                            value: `${userData.studentType}${userData.grade} (${userData.cohort}回生)`,
+                            inline: true,
+                        },
+                        {
+                            name: "組",
+                            value: `${userData.class}組`,
+                            inline: true,
+                        },
+                        {
+                            name: "出席番号",
+                            value: `${userData.number}番`,
+                            inline: true,
+                        },
+                        ...commonEmbedFields,
+                    ]
                 }
-            })()
-            await rest
-                .post(Routes.webhook(loggingWebhook.id, loggingWebhook.token), {
-                    body: {
-                        avatar_url: loggingWebhookAvatarUrlOf(c.req.url).href,
-                        embeds: [
-                            loggingEmbedBase()
-                                .color(0x5865f2)
-                                .fields(...embedFields)
-                                .toJSON(),
-                        ],
-                    } satisfies RESTPostAPIWebhookWithTokenJSONBody,
-                })
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                })
-        }
+                case NadaAcWorkSpaceUserType.Others:
+                    return commonEmbedFields
+            }
+        })()
+        await logger
+            .info({
+                fields: embedFields,
+            })
+            .catch(async (e: unknown) => {
+                if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+            })
+
         await editOriginal({
             content: ":white_check_mark: 認証が完了しました。",
             components: [],
