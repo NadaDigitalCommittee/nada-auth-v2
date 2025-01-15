@@ -191,9 +191,8 @@ export const handler: CommandHandler<Env> = async (c) => {
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {
         await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
-        await guildConfigRecord.delete(guildId)
         return c.res(
-            ":x: サーバーの設定データを正しく読み取れなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
+            ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。",
         )
     }
     const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
@@ -203,9 +202,8 @@ export const handler: CommandHandler<Env> = async (c) => {
             errorContext,
             c.env,
         )
-        await guildConfigRecord.delete(guildId)
         return c.res(
-            ":x: サーバーの設定データを正しく読み取れなかったため、コマンドが異常終了しました。サーバー設定は初期化されました。",
+            ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。",
         )
     }
     const guildConfig = guildConfigParseResult.output
