@@ -22,6 +22,7 @@ export interface NadaAcWorkSpaceStudentUser {
         number: number
         firstName: string
         lastName: string
+        email: string
         studentType: NadaAcWorkSpaceStudentType
     }
 }
@@ -31,6 +32,7 @@ export interface NadaAcWorkSpaceOtherUser {
     data: {
         firstName: string
         lastName: string
+        email: string
     }
 }
 

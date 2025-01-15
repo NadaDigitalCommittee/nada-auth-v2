@@ -11,7 +11,7 @@ import {
 
 // TODO: クラスにしてformatNicknameをメソッドに組み込む
 export const extractNadaACWorkSpaceUserFromTokenPayload = (
-    tokenPayload: SetRequired<TokenPayload, "given_name" | "family_name">,
+    tokenPayload: SetRequired<TokenPayload, "given_name" | "family_name" | "email">,
 ): NadaAcWorkSpaceUser => {
     const userDataSource =
         /^(?<combinedGrade>[1-6])(?<class>\d)(?<number>\d{2})(?<familyName>.*)$/.exec(
@@ -30,6 +30,7 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
             data: {
                 firstName: tokenPayload.given_name,
                 lastName: tokenPayload.family_name,
+                email: tokenPayload.email,
             },
         }
     }
@@ -61,6 +62,7 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
             number: +userDataSource.number,
             firstName: tokenPayload.given_name,
             lastName: userDataSource.familyName,
+            email: tokenPayload.email,
             studentType: userStudentType,
         },
     }
