@@ -52,7 +52,7 @@ const app = new Hono<Env>().get(
         const guildConfigRecord = c.env.GuildConfigs
         const { rest } = c.var
         const AUTHN_FAILED_MESSAGE = `:x: 認証に失敗しました。以下の点を確認し、再試行してください。
-* 学校から配布された Google アカウントでログインしていること。
+* 学校から配付された Google アカウントでログインしていること。
 * メールアドレスとプロフィールへのアクセスを許可していること。`
         const sessionId = c.req.valid("cookie").sid
         deleteCookie(c, sharedCookieNames.sessionId)
