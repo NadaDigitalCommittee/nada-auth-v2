@@ -17,6 +17,7 @@ import {
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
     Routes,
 } from "discord-api-types/v10"
+import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
 import { Modals } from ".."
@@ -66,7 +67,7 @@ export const command = {
     ],
 } as const satisfies RESTPostAPIChatInputApplicationCommandsJSONBody
 
-type SetupOptions = (typeof command)["options"][number]
+type SetupOptions = ArrayValues<(typeof command)["options"]>
 
 /**
  * @package

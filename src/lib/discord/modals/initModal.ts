@@ -10,6 +10,7 @@ import {
     TextInputStyle,
 } from "discord-api-types/v10"
 import { Components } from "discord-hono"
+import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
 import { Components as CustomComponents } from ".."
@@ -59,7 +60,9 @@ export const modal = {
     ],
 } as const satisfies APIModalInteractionResponseCallbackData
 
-type TextInputCustomId = (typeof modal)["components"][number]["components"][number]["custom_id"]
+type TextInputCustomId = ArrayValues<
+    ArrayValues<(typeof modal)["components"]>["components"]
+>["custom_id"]
 
 /**
  * @package

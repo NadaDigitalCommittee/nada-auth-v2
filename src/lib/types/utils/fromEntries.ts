@@ -1,3 +1,5 @@
+import type { ArrayValues } from "type-fest"
+
 type ExtractTupleWithFirstUnionDistributed<TUnion extends unknown[], TShape> = TUnion extends [
     infer P,
     ...infer Q,
@@ -9,5 +11,5 @@ type ExtractTupleWithFirstUnionDistributed<TUnion extends unknown[], TShape> = T
 
 // https://scrapbox.io/elecdeer-pub/TypeScriptでObject.fromEntriesの様な関数に強い型を付ける
 export type FromEntries<T extends [PropertyKey, unknown][]> = {
-    [K in T[number][0]]: ExtractTupleWithFirstUnionDistributed<T[number], [K, unknown]>[1]
+    [K in ArrayValues<T>[0]]: ExtractTupleWithFirstUnionDistributed<ArrayValues<T>, [K, unknown]>[1]
 }
