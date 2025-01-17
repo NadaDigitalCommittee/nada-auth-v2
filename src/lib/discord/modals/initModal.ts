@@ -1,4 +1,4 @@
-import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
+import { CDN, type DiscordAPIError, REST } from "@discordjs/rest"
 import { isGuildInteraction } from "discord-api-types/utils"
 import {
     type APIModalInteractionResponseCallbackData,
@@ -8,8 +8,7 @@ import {
     Routes,
     TextInputStyle,
 } from "discord-api-types/v10"
-import { Components } from "discord-hono"
-import type { ModalHandler } from "discord-hono"
+import { Components, type ModalHandler } from "discord-hono"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 

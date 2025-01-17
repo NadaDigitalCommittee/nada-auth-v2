@@ -41,6 +41,15 @@ export default tseslint.config(
                 },
             ],
             "no-console": ["error", { allow: ["warn", "error"] }],
+            "no-duplicate-imports": ["error"],
+            "@typescript-eslint/consistent-type-imports": [
+                "error",
+                {
+                    disallowTypeAnnotations: true,
+                    fixStyle: "separate-type-imports",
+                    prefer: "type-imports",
+                },
+            ],
         },
     },
     {

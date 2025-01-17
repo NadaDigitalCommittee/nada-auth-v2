@@ -9,8 +9,7 @@ import {
     PermissionFlagsBits,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord-api-types/v10"
-import { Embed } from "discord-hono"
-import type { CommandHandler } from "discord-hono"
+import { type CommandHandler, Embed } from "discord-hono"
 
 import type { Env } from "@/lib/schema/env"
 import { inOperator } from "@/lib/utils/fp"

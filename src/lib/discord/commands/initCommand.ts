@@ -1,4 +1,4 @@
-import { DiscordAPIError, REST } from "@discordjs/rest"
+import { type DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
     isGuildInteraction,

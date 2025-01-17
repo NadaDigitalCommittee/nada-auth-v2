@@ -5,8 +5,7 @@ import {
     ButtonStyle,
     ComponentType,
 } from "discord-api-types/v10"
-import { Components } from "discord-hono"
-import type { ComponentHandler } from "discord-hono"
+import { type ComponentHandler, Components } from "discord-hono"
 import { hc } from "hono/client"
 import type { ValueOf } from "type-fest"
 import * as v from "valibot"

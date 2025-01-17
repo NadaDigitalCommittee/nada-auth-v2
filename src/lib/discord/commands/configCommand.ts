@@ -1,4 +1,4 @@
-import { DiscordAPIError, REST } from "@discordjs/rest"
+import { type DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
     isGuildInteraction,
@@ -22,8 +22,7 @@ import {
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
     Routes,
 } from "discord-api-types/v10"
-import { Embed } from "discord-hono"
-import type { CommandHandler } from "discord-hono"
+import { type CommandHandler, Embed } from "discord-hono"
 import type { ValueOf } from "type-fest"
 import * as v from "valibot"
 
