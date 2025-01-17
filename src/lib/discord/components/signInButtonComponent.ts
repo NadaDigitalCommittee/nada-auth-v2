@@ -2,11 +2,11 @@ import { isGuildInteraction } from "discord-api-types/utils"
 import {
     type APIButtonComponentWithCustomId,
     type APIButtonComponentWithURL,
-    type APIMessageComponentButtonInteraction,
     ButtonStyle,
     ComponentType,
 } from "discord-api-types/v10"
 import { Components } from "discord-hono"
+import type { ComponentHandler } from "discord-hono"
 import { hc } from "hono/client"
 import type { ValueOf } from "type-fest"
 import * as v from "valibot"
@@ -17,7 +17,6 @@ import {
     sessionExpirationTtl,
     sessionExpirationTtlDev,
 } from "../constants"
-import type { ComponentHandler } from "../types"
 import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { AppType } from "@/app"
@@ -43,7 +42,7 @@ export const handler: ComponentHandler<Env> = async (c) => {
     const guildConfigRecord = c.env.GuildConfigs
     const authNRequestRecord = c.env.AuthNRequests
     const sessionRecord = c.env.Sessions
-    const interaction = c.interaction as unknown as APIMessageComponentButtonInteraction
+    const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     const { guild_id: guildId, member, token: interactionToken } = interaction
     const { user } = member

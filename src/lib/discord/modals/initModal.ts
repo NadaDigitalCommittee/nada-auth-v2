@@ -2,7 +2,6 @@ import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
 import { isGuildInteraction } from "discord-api-types/utils"
 import {
     type APIModalInteractionResponseCallbackData,
-    type APIModalSubmitInteraction,
     ComponentType,
     type RESTPostAPIWebhookWithTokenJSONBody,
     type RESTPostAPIWebhookWithTokenResult,
@@ -10,12 +9,12 @@ import {
     TextInputStyle,
 } from "discord-api-types/v10"
 import { Components } from "discord-hono"
+import type { ModalHandler } from "discord-hono"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
 import { Components as CustomComponents } from ".."
 import { guildConfigInit } from "../constants"
-import type { ModalHandler } from "../types"
 import {
     type ErrorContext,
     reportErrorWithContext,
@@ -76,7 +75,7 @@ export const handler: ModalHandler<
     const buttonLabel =
         c.var["button-label"]?.trim() || CustomComponents.signInButton.component.label
     const rest = new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN)
-    const interaction = c.interaction as APIModalSubmitInteraction
+    const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     const { guild_id: guildId, member } = interaction
     const errorContext = {

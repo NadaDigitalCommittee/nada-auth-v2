@@ -3,7 +3,6 @@ import {
     isGuildInteraction,
 } from "discord-api-types/utils"
 import {
-    type APIApplicationCommandInteraction,
     ApplicationCommandOptionType,
     ApplicationCommandType,
     InteractionContextType,
@@ -11,8 +10,7 @@ import {
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord-api-types/v10"
 import { Embed } from "discord-hono"
-
-import type { CommandHandler } from "../types"
+import type { CommandHandler } from "discord-hono"
 
 import type { Env } from "@/lib/schema/env"
 import { inOperator } from "@/lib/utils/fp"
@@ -111,7 +109,7 @@ const helpDocs = {
  * @package
  */
 export const handler: CommandHandler<Env> = (c) => {
-    const interaction = c.interaction as APIApplicationCommandInteraction
+    const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     if (!isChatInputApplicationCommandInteraction(interaction))
         return c.res(":x: このコマンドはサポートされていません。")

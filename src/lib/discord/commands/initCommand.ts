@@ -4,7 +4,6 @@ import {
     isGuildInteraction,
 } from "discord-api-types/utils"
 import {
-    type APIApplicationCommandInteraction,
     type APIApplicationCommandInteractionDataOption,
     ApplicationCommandOptionType,
     ApplicationCommandType,
@@ -17,6 +16,7 @@ import {
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
     Routes,
 } from "discord-api-types/v10"
+import type { CommandHandler } from "discord-hono"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
@@ -26,7 +26,6 @@ import {
     DISCORD_WEBHOOK_NAME_MAX_LENGTH,
     guildConfigInit,
 } from "../constants"
-import type { CommandHandler } from "../types"
 import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
@@ -75,7 +74,7 @@ type SetupOptions = ArrayValues<(typeof command)["options"]>
 export const handler: CommandHandler<Env> = async (c) => {
     const rest = new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN)
     const guildConfigRecord = c.env.GuildConfigs
-    const interaction = c.interaction as APIApplicationCommandInteraction
+    const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     if (!isChatInputApplicationCommandInteraction(interaction))
         return c.res(":x: このコマンドはサポートされていません。")

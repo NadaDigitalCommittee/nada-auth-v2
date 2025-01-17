@@ -5,7 +5,6 @@ import {
 } from "discord-api-types/utils"
 import {
     type APIApplicationCommandBasicOption,
-    type APIApplicationCommandInteraction,
     type APIApplicationCommandInteractionDataBooleanOption,
     type APIApplicationCommandInteractionDataSubcommandGroupOption,
     type APIApplicationCommandSubcommandOption,
@@ -24,11 +23,11 @@ import {
     Routes,
 } from "discord-api-types/v10"
 import { Embed } from "discord-hono"
+import type { CommandHandler } from "discord-hono"
 import type { ValueOf } from "type-fest"
 import * as v from "valibot"
 
 import { configSetOptionNameOf, guildConfigInit, guildConfigKvKeyOf } from "../constants"
-import type { CommandHandler } from "../types"
 import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
@@ -169,8 +168,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     // mountするとvarが空になる？
     // const { rest } = c.var
     const rest = new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN)
-    // TODO: DiscordHonoBase.fetchを修正
-    const interaction = c.interaction as APIApplicationCommandInteraction
+    const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     if (!isChatInputApplicationCommandInteraction(interaction))
         return c.res(":x: このコマンドはサポートされていません。")
