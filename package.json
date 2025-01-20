@@ -20,9 +20,9 @@
         "@hono/valibot-validator": "^0.5.2",
         "crypto-browserify": "^3.12.1",
         "discord-api-types": "^0.37.116",
-        "discord-hono": "^0.11.1",
+        "discord-hono": "^0.11.2",
         "google-auth-library": "^9.15.0",
-        "hono": "^4.6.16",
+        "hono": "^4.6.17",
         "valibot": "^1.0.0-beta.12"
     },
     "devDependencies": {
@@ -37,12 +37,12 @@
         "expect-type": "^1.1.0",
         "globals": "^15.14.0",
         "husky": "^9.1.7",
-        "lint-staged": "^15.4.0",
+        "lint-staged": "^15.4.1",
         "prettier": "^3.4.2",
         "type-fest": "^4.32.0",
         "typescript": "^5.7.3",
         "typescript-eslint": "^8.20.0",
-        "wrangler": "^3.103.1"
+        "wrangler": "^3.103.2"
     },
     "patchedDependencies": {
         "discord-api-types@0.37.115": "patches/discord-api-types@0.37.115.patch",
