@@ -39,7 +39,7 @@
         "husky": "^9.1.7",
         "lint-staged": "^15.4.1",
         "prettier": "^3.4.2",
-        "type-fest": "^4.32.0",
+        "type-fest": "^4.33.0",
         "typescript": "^5.7.3",
         "typescript-eslint": "^8.21.0",
         "wrangler": "^3.103.2"
@@ -47,6 +47,6 @@
     "patchedDependencies": {
         "discord-api-types@0.37.115": "patches/discord-api-types@0.37.115.patch",
         "google-auth-library@9.15.0": "patches/google-auth-library@9.15.0.patch",
-        "type-fest@4.32.0": "patches/type-fest@4.32.0.patch"
+        "type-fest@4.33.0": "patches/type-fest@4.33.0.patch"
     }
 }
