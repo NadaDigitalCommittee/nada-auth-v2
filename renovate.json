@@ -12,5 +12,6 @@
   "schedule": [
     "at any time"
   ],
-  "minimumReleaseAge": "0 days"
+  "minimumReleaseAge": "0 days",
+  "rangeStrategy": "bump"
 }
