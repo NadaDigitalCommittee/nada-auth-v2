@@ -13,6 +13,7 @@ export const boolTupleToBitmask = <T extends boolean[]>(...tuple: T) =>
  */
 export const valuesPairToBitmask = <T0, T1>(b0: T0, b1: T1) =>
     ({
+        // @ts-expect-error ts2589 type-fest@4.33.0で出現 動作は正しいので後回し
         bitmask: boolTupleToBitmask(!!b0, !!b1),
         bindings: [b0, b1],
     }) as ValuesPairToBitmask<T0, T1>
