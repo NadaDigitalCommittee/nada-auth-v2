@@ -14,7 +14,7 @@ index a776d0107ee286e22d5840e3409930cbc6114299..2975e7d2b0659c5c79dbb0ea524c7894
       * Discord Employee
       */
 diff --git a/payloads/v10/user.js b/payloads/v10/user.js
-index ab3f3fd2e2eff3911ffaaac266c2e0df7193b220..76fbbbd99c24912a4474d031dcc89399cc25811c 100644
+index ab3f3fd2e2eff3911ffaaac266c2e0df7193b220..18d3dc50e488696a113ac79bd7c65b49571ab740 100644
 --- a/payloads/v10/user.js
 +++ b/payloads/v10/user.js
 @@ -9,6 +9,10 @@ exports.ConnectionVisibility = exports.ConnectionService = exports.UserPremiumTy
