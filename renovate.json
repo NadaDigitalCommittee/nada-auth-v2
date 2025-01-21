@@ -8,5 +8,6 @@
   "automerge": false,
   "schedule": [
     "at any time"
-  ]
+  ],
+  "minimumReleaseAge": null
 }
