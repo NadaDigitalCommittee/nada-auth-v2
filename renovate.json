@@ -3,11 +3,14 @@
   "extends": [
     "config:recommended"
   ],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
+  "branchConcurrentLimit": 0,
   "timezone": "Asia/Tokyo",
   "dependencyDashboard": true,
   "automerge": false,
   "schedule": [
     "at any time"
   ],
-  "minimumReleaseAge": null
+  "minimumReleaseAge": "0 days"
 }
