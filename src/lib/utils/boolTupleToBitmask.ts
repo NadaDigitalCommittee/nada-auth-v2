@@ -5,7 +5,7 @@ import type { BoolTupleToBitmask, ValuesPairToBitmask } from "@/lib/types/utils/
  * @description Boolean の組を受け取り、それと一意に対応するビットマスクを返す。2 個以上の Boolean 条件で switch するためのユーティリティ
  */
 export const boolTupleToBitmask = <T extends boolean[]>(...tuple: T) =>
-    tuple.reverse().reduce((acc, cur, i) => acc | (+cur << i), 0) as BoolTupleToBitmask<T>
+    tuple.reverse().reduce<number>((acc, cur, i) => acc | (+cur << i), 0) as BoolTupleToBitmask<T>
 
 /**
  *
