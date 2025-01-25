@@ -2,7 +2,7 @@
 import { test } from "bun:test"
 import { expectTypeOf } from "expect-type"
 
-import type { BoolTupleToBitmask, ValuesPairToBitmask } from "../boolTupleToBitmask"
+import type { BoolTupleToBitmask, ValuesToBitmask } from "../boolTupleToBitmask"
 
 test("BoolTupleToBitmask", () => {
     expectTypeOf(
@@ -16,31 +16,18 @@ test("BoolTupleToBitmask:union", () => {
     ).toMatchTypeOf<0b1001001 | 0b1011001 | 0b1101001 | 0b1111001>()
 })
 
-test("ValuesPairToBitmask:union", () => {
-    expectTypeOf(null! as ValuesPairToBitmask<"ABC" | "" | null, object | undefined>).toMatchTypeOf<
-        | {
-              bitmask: 0b00
-              bindings: [null, undefined]
-          }
-        | {
-              bitmask: 0b00
-              bindings: ["", undefined]
-          }
-        | {
-              bitmask: 0b01
-              bindings: [null, object]
-          }
-        | {
-              bitmask: 0b01
-              bindings: ["", object]
-          }
-        | {
-              bitmask: 0b10
-              bindings: ["ABC", undefined]
-          }
-        | {
-              bitmask: 0b11
-              bindings: ["ABC", object]
-          }
-    >()
+test("ValuesToBitmask:union", () => {
+    type Bitmask = ValuesToBitmask<["ABC" | "" | null, object | undefined]>
+    type ExtractBitmaskFor<Bindings> = Extract<
+        Bitmask,
+        {
+            bindings: Bindings
+        }
+    >["bitmask"]
+    expectTypeOf(null! as ExtractBitmaskFor<[null, undefined]>).toMatchTypeOf<0b00>()
+    expectTypeOf(null! as ExtractBitmaskFor<["", undefined]>).toMatchTypeOf<0b00>()
+    expectTypeOf(null! as ExtractBitmaskFor<[null, object]>).toMatchTypeOf<0b01>()
+    expectTypeOf(null! as ExtractBitmaskFor<["", object]>).toMatchTypeOf<0b01>()
+    expectTypeOf(null! as ExtractBitmaskFor<["ABC", undefined]>).toMatchTypeOf<0b10>()
+    expectTypeOf(null! as ExtractBitmaskFor<["ABC", object]>).toMatchTypeOf<0b11>()
 })

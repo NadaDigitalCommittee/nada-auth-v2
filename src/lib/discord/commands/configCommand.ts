@@ -31,7 +31,7 @@ import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type GuildConfigRecord } from "@/lib/schema/kvNamespaces"
-import { valuesPairToBitmask } from "@/lib/utils/boolTupleToBitmask"
+import { valuesToBitmask } from "@/lib/utils/boolTupleToBitmask"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
 const configSetOptions = [
@@ -236,7 +236,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                 })
             }
             if (subcommandName === "logging-channel") {
-                const { bitmask, bindings } = valuesPairToBitmask(
+                const { bitmask, bindings } = valuesToBitmask(
                     guildConfig._loggingWebhook,
                     subcommandOptionOptionValue,
                 )

@@ -1,4 +1,4 @@
-import type { BoolTupleToBitmask, ValuesPairToBitmask } from "@/lib/types/utils/boolTupleToBitmask"
+import type { BoolTupleToBitmask, ValuesToBitmask } from "@/lib/types/utils/boolTupleToBitmask"
 
 /**
  *
@@ -11,9 +11,10 @@ export const boolTupleToBitmask = <T extends boolean[]>(...tuple: T) =>
  *
  * @description 意地でも Narrowing をはたらかせるためのユーティリティ
  */
-export const valuesPairToBitmask = <T0, T1>(b0: T0, b1: T1) =>
+export const valuesToBitmask = <T extends unknown[]>(...values: T) =>
     ({
-        // @ts-expect-error ts2589 type-fest@4.33.0で出現 動作は正しいので後回し
-        bitmask: boolTupleToBitmask(!!b0, !!b1),
-        bindings: [b0, b1],
-    }) as ValuesPairToBitmask<T0, T1>
+        // @ts-expect-error ts2589 型アサーションが二重になっているため?
+        // ここでエラーが出ないように書き換えると今度はこの関数が使われている場所で同じエラーが出る
+        bitmask: boolTupleToBitmask(...values.map(Boolean)),
+        bindings: values,
+    }) as ValuesToBitmask<T>

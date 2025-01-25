@@ -1,4 +1,4 @@
-import type { IsAny, IsUnknown } from "type-fest"
+import type { IsAny, IsTuple, IsUnknown } from "type-fest"
 
 import type { Falsy } from "./falsy"
 
@@ -17,3 +17,10 @@ export type ToBool<T> = boolean extends T
               : T extends Falsy
                 ? false
                 : true
+
+export type ToBoolMap<T extends unknown[]> =
+    IsTuple<T> extends true
+        ? T extends [infer Head, ...infer Tail]
+            ? [ToBool<Head>, ...ToBoolMap<Tail>]
+            : []
+        : boolean[]
