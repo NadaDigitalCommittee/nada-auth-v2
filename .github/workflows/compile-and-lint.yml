@@ -1,0 +1,16 @@
+name: Compile and Lint
+on:
+    pull_request:
+jobs:
+    compile_and_lint:
+        runs-on: ubuntu-latest
+        name: Compile and Lint
+        steps:
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v2
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+            - run: bun i --frozen-lockfile
+            - run: bun tsc
+            - run: bun lint
