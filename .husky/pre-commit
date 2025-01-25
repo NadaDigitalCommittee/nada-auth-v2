@@ -1,2 +1,2 @@
-bun run lint-staged
-bun run tsc
+bun lint-staged
+bun tsc

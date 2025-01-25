@@ -1,17 +1,13 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
-  "prHourlyLimit": 0,
-  "prConcurrentLimit": 0,
-  "branchConcurrentLimit": 0,
-  "timezone": "Asia/Tokyo",
-  "dependencyDashboard": true,
-  "automerge": false,
-  "schedule": [
-    "at any time"
-  ],
-  "minimumReleaseAge": "0 days",
-  "rangeStrategy": "bump"
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended"],
+    "prHourlyLimit": 0,
+    "prConcurrentLimit": 0,
+    "branchConcurrentLimit": 0,
+    "timezone": "Asia/Tokyo",
+    "dependencyDashboard": true,
+    "automerge": false,
+    "schedule": ["at any time"],
+    "minimumReleaseAge": "0 days",
+    "rangeStrategy": "bump"
 }
