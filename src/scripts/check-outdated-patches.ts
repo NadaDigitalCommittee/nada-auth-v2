@@ -3,7 +3,8 @@ import type { BunLockFilePackageArray } from "bun"
 
 import packageJson from "../../package.json"
 
-await Bun.$`git stash -u`.quiet()
+const hasUncommittedChanges = await Bun.$`git status --porcelain`.text()
+if (hasUncommittedChanges) await Bun.$`git stash -u`.quiet()
 await Bun.$`bun install --ignore-scripts --save-text-lockfile --frozen-lockfile --lockfile-only`.quiet()
 const lockFile = await import("../../bun.lock")
 const { patchedDependencies } = packageJson
@@ -42,5 +43,5 @@ try {
     })
 } finally {
     await Bun.$`git reset --hard HEAD && git clean -f`.quiet()
-    await Bun.$`git stash pop`.quiet()
+    if (hasUncommittedChanges) await Bun.$`git stash pop`.quiet()
 }
