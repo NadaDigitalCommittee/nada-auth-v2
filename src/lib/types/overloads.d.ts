@@ -24,6 +24,7 @@ declare global {
     interface ObjectConstructor {
         entries<T extends Record<PropertyKey, unknown> | ArrayLike<unknown>>(o: T): Entries<T>
         fromEntries<T extends Array<readonly [PropertyKey, unknown]>>(entries: T): FromEntries<T>
+        keys<T>(o: T): (keyof T)[]
     }
 }
 
