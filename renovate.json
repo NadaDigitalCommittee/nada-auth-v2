@@ -2,12 +2,39 @@
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": ["config:recommended"],
     "prHourlyLimit": 0,
-    "prConcurrentLimit": 0,
-    "branchConcurrentLimit": 0,
+    "prConcurrentLimit": 5,
     "timezone": "Asia/Tokyo",
     "dependencyDashboard": true,
     "automerge": false,
     "schedule": ["at any time"],
     "minimumReleaseAge": "0 days",
-    "rangeStrategy": "bump"
+    "rangeStrategy": "bump",
+    "packageRules": [
+        {
+            "matchPackageNames": [
+                "@cloudflare/workers-types",
+                "@types/bun",
+                "@trivago/prettier-plugin-sort-imports",
+                "eslint-config-prettier",
+                "eslint-plugin-import-access",
+                "expect-type",
+                "globals",
+                "prettier-plugin-toml",
+                "wrangler"
+            ],
+            "addLabels": ["renovate-automerge"],
+            "matchUpdateTypes": ["minor", "patch"],
+            "automerge": true,
+            "platformAutomerge": true,
+            "ignoreTests": false
+        },
+        {
+            "matchPackageNames": ["@eslint/js", "eslint", "prettier", "typescript-eslint"],
+            "addLabels": ["renovate-automerge"],
+            "matchUpdateTypes": ["patch"],
+            "automerge": true,
+            "platformAutomerge": true,
+            "ignoreTests": false
+        }
+    ]
 }

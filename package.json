@@ -5,6 +5,7 @@
         "deploy": "wrangler deploy --minify",
         "prebuild": "bun --env-file=./.prod.vars run ./src/scripts/register.ts",
         "prebuild-dev": "bun --env-file=./.dev.vars run ./src/scripts/register.ts",
+        "check-outdated-patches": "bun run ./src/scripts/check-outdated-patches.ts",
         "lint:eslint": "eslint .",
         "lint:prettier": "prettier --check .",
         "lint": "bun lint:prettier && bun lint:eslint",
@@ -25,18 +26,18 @@
         "@hono/valibot-validator": "^0.5.2",
         "crypto-browserify": "^3.12.1",
         "discord-api-types": "^0.37.117",
-        "discord-hono": "^0.11.3",
+        "discord-hono": "^0.11.4",
         "google-auth-library": "^9.15.1",
-        "hono": "^4.6.18",
+        "hono": "^4.6.19",
         "valibot": "^1.0.0-beta.14"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20250121.0",
-        "@eslint/js": "^9.18.0",
+        "@cloudflare/workers-types": "^4.20250124.3",
+        "@eslint/js": "^9.19.0",
         "@trivago/prettier-plugin-sort-imports": "^5.2.1",
         "@types/bun": "^1.2.0",
         "@types/whatwg-mimetype": "^3.0.2",
-        "eslint": "^9.18.0",
+        "eslint": "^9.19.0",
         "eslint-config-prettier": "^10.0.1",
         "eslint-plugin-import-access": "^2.2.2",
         "expect-type": "^1.1.0",
@@ -48,7 +49,7 @@
         "type-fest": "^4.33.0",
         "typescript": "^5.7.3",
         "typescript-eslint": "^8.21.0",
-        "wrangler": "^3.104.0"
+        "wrangler": "^3.105.1"
     },
     "patchedDependencies": {
         "discord-api-types@0.37.117": "patches/discord-api-types@0.37.117.patch",
