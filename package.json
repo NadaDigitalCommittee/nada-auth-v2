@@ -52,7 +52,7 @@
     },
     "patchedDependencies": {
         "discord-api-types@0.37.117": "patches/discord-api-types@0.37.117.patch",
-        "google-auth-library@9.15.0": "patches/google-auth-library@9.15.0.patch",
+        "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch",
         "type-fest@4.33.0": "patches/type-fest@4.33.0.patch"
     }
 }
