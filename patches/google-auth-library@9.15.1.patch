@@ -12,7 +12,7 @@ index 26ede463f7d7abc55676ea17fe94cc7d6ce17577..16af82d082ae0bdfcc8e1c408e3829b6
      async sha256DigestBase64(str) {
          return crypto.createHash('sha256').update(str).digest('base64');
 diff --git a/package.json b/package.json
-index 2bc32c04e67a18b24cab0a0219a59882bfdcdc76..514f94c793be90ce0d1620c688bd9d6159f20b50 100644
+index a7e3231ed6a91a4c897abdc77805f9c6eb5acbfb..3174a58795ffd910baec71910e7664e95bb96608 100644
 --- a/package.json
 +++ b/package.json
 @@ -22,7 +22,8 @@
