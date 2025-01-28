@@ -1,14 +1,7 @@
-type NegAt<T extends unknown[], I extends number, Count extends unknown[] = [unknown]> = T extends [
-    ...infer Init,
-    infer Last,
-]
-    ? Count["length"] extends I
-        ? Last
-        : NegAt<Init, I, [...Count, unknown]>
-    : undefined
+import type { Reverse } from "./reverse"
 
-export type At<T extends unknown[], I extends number> = I extends infer J extends number
-    ? `${J}` extends `-${infer A extends number}`
-        ? NegAt<T, A>
-        : T[J]
+export type At<T extends unknown[], I extends number> = I extends I
+    ? `${I}` extends `-${infer A extends number}`
+        ? [unknown, ...Reverse<T>][A]
+        : T[I]
     : never
