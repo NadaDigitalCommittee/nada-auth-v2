@@ -8,82 +8,82 @@ import type { UnknownArray, UnknownRecord } from "type-fest"
 
 import type { ToBool } from "../toBool"
 
-test("unknown", () => {
+test("ToBool:unknown", () => {
     expectTypeOf(null! as ToBool<unknown>).toMatchTypeOf<boolean>()
 })
-test("any", () => {
+test("ToBool:any", () => {
     expectTypeOf(null! as ToBool<any>).toMatchTypeOf<boolean>()
 })
-test("number", () => {
+test("ToBool:number", () => {
     expectTypeOf(null! as ToBool<number>).toMatchTypeOf<boolean>()
 })
-test("string", () => {
+test("ToBool:string", () => {
     expectTypeOf(null! as ToBool<string>).toMatchTypeOf<boolean>()
 })
 
-test("object", () => {
+test("ToBool:object", () => {
     expectTypeOf(null! as ToBool<object>).toMatchTypeOf<true>()
 })
-test("{}", () => {
+test("ToBool:{}", () => {
     expectTypeOf(null! as ToBool<{}>).toMatchTypeOf<boolean>()
 })
-test("Object", () => {
+test("ToBool:Object", () => {
     expectTypeOf(null! as ToBool<Object>).toMatchTypeOf<boolean>()
 })
 
-test("symbol", () => {
+test("ToBool:symbol", () => {
     expectTypeOf(null! as ToBool<symbol>).toMatchTypeOf<true>()
 })
 
-test("truthy string", () => {
+test("ToBool:truthy string", () => {
     expectTypeOf(null! as ToBool<"ABC">).toMatchTypeOf<true>()
 })
-test("falsy string", () => {
+test("ToBool:falsy string", () => {
     expectTypeOf(null! as ToBool<"">).toMatchTypeOf<false>()
 })
-test("union of truthy and falsy strings", () => {
+test("ToBool:union of truthy and falsy strings", () => {
     expectTypeOf(null! as ToBool<"" | "ABC">).toMatchTypeOf<boolean>()
 })
 
-test("truthy number", () => {
+test("ToBool:truthy number", () => {
     expectTypeOf(null! as ToBool<10>).toMatchTypeOf<true>()
 })
-test("falsy number", () => {
+test("ToBool:falsy number", () => {
     expectTypeOf(null! as ToBool<0>).toMatchTypeOf<false>()
 })
-test("truthy bigint", () => {
+test("ToBool:truthy bigint", () => {
     expectTypeOf(null! as ToBool<10n>).toMatchTypeOf<true>()
 })
-test("falsy bigint", () => {
+test("ToBool:falsy bigint", () => {
     expectTypeOf(null! as ToBool<0n>).toMatchTypeOf<false>()
 })
 
-test("true", () => {
+test("ToBool:true", () => {
     expectTypeOf(null! as ToBool<true>).toMatchTypeOf<true>()
 })
-test("false", () => {
+test("ToBool:false", () => {
     expectTypeOf(null! as ToBool<false>).toMatchTypeOf<false>()
 })
 
-test("null", () => {
+test("ToBool:null", () => {
     expectTypeOf(null! as ToBool<null>).toMatchTypeOf<false>()
 })
-test("undefined", () => {
+test("ToBool:undefined", () => {
     expectTypeOf(null! as ToBool<undefined>).toMatchTypeOf<false>()
 })
 
-test("function", () => {
+test("ToBool:function", () => {
     expectTypeOf(null! as ToBool<() => false>).toMatchTypeOf<true>()
 })
-test("empty array", () => {
+test("ToBool:empty array", () => {
     expectTypeOf(null! as ToBool<[]>).toMatchTypeOf<true>()
 })
-test("UnknownRecord", () => {
+test("ToBool:UnknownRecord", () => {
     expectTypeOf(null! as ToBool<UnknownRecord>).toMatchTypeOf<true>()
 })
-test("UnknownArray", () => {
+test("ToBool:UnknownArray", () => {
     expectTypeOf(null! as ToBool<UnknownArray>).toMatchTypeOf<true>()
 })
-test("never", () => {
+test("ToBool:never", () => {
     expectTypeOf(null!).toMatchTypeOf<never>()
 })

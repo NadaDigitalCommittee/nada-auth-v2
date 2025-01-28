@@ -4,25 +4,25 @@ import { expectTypeOf } from "expect-type"
 
 import type { NegateBool, NegateNumber } from "../negate"
 
-test("negate positive number", () => {
+test("NegateNumber:positive number", () => {
     expectTypeOf(null! as NegateNumber<10>).toMatchTypeOf<-10>()
 })
-test("negate 0", () => {
+test("NegateNumber:0", () => {
     expectTypeOf(null! as NegateNumber<0>).toMatchTypeOf<0>()
 })
-test("negate negative number", () => {
+test("NegateNumber:negative number", () => {
     expectTypeOf(null! as NegateNumber<-10>).toMatchTypeOf<10>()
 })
-test("negateBool: union", () => {
+test("NegateNumber:union", () => {
     expectTypeOf(null! as NegateNumber<-10 | 4 | -2 | 0>).toMatchTypeOf<10 | -4 | 2 | 0>()
 })
 
-test("negate true", () => {
+test("NegateBool:true", () => {
     expectTypeOf(null! as NegateBool<true>).toMatchTypeOf<false>()
 })
-test("negate false", () => {
+test("NegateBool:false", () => {
     expectTypeOf(null! as NegateBool<false>).toMatchTypeOf<true>()
 })
-test("negateBool: union", () => {
+test("NegateBool:union", () => {
     expectTypeOf(null! as NegateBool<boolean>).toMatchTypeOf<boolean>()
 })

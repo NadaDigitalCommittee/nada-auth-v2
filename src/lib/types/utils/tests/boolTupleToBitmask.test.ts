@@ -4,12 +4,11 @@ import { expectTypeOf } from "expect-type"
 
 import type { BoolTupleToBitmask, ValuesToBitmask } from "../boolTupleToBitmask"
 
-test("BoolTupleToBitmask", () => {
+test("BoolTupleToBitmask:base", () => {
     expectTypeOf(
         null! as BoolTupleToBitmask<[true, false, false, true, false, false, true]>,
     ).toMatchTypeOf<0b1001001>()
 })
-
 test("BoolTupleToBitmask:union", () => {
     expectTypeOf(
         null! as BoolTupleToBitmask<[true, boolean, boolean, true, false, false, true]>,

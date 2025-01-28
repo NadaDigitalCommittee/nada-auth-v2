@@ -3,7 +3,7 @@ import type { Subtract } from "type-fest"
 import type { NegateBool, NegateNumber } from "./negate"
 import type { RepeatArray } from "./repeatArray"
 
-type PrivatePower<
+type PowerHelper<
     B extends number,
     E extends number,
     Count extends unknown[] = [unknown],
@@ -15,14 +15,14 @@ type PrivatePower<
           ? Sign extends false
               ? Count["length"]
               : NegateNumber<Count["length"]>
-          : PrivatePower<B, Subtract<E, 1>, RepeatArray<Count, A>, NegateBool<Sign>>
+          : PowerHelper<B, Subtract<E, 1>, RepeatArray<Count, A>, NegateBool<Sign>>
       : E extends 0
         ? Count["length"]
-        : PrivatePower<B, Subtract<E, 1>, RepeatArray<Count, B>, Sign>
+        : PowerHelper<B, Subtract<E, 1>, RepeatArray<Count, B>, Sign>
 
 // 整数の非負整数乗のみ
-export type Power<B extends number, E extends number> = B extends infer _B extends number
-    ? _B extends 0 | 1
-        ? _B
-        : PrivatePower<_B, E>
+export type Power<B extends number, E extends number> = B extends B
+    ? B extends 0 | 1
+        ? B
+        : PowerHelper<B, E>
     : never
