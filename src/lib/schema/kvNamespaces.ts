@@ -1,6 +1,7 @@
 import * as v from "valibot"
 
 import { $APIUser, $APIWebhook, $Snowflake } from "./discord"
+import { $NadaAcWorkSpaceUserPartialProfile } from "./nadaAc"
 
 export const $GuildId = $Snowflake
 export const $GuildConfig = v.object({
@@ -17,6 +18,7 @@ export const $Session = v.object({
     guildId: $Snowflake,
     user: $APIUser,
     interactionToken: v.string(),
+    expectedWorkspaceUserProfile: v.optional($NadaAcWorkSpaceUserPartialProfile),
     state: v.optional(v.string()),
     nonce: v.optional(v.string()),
 })

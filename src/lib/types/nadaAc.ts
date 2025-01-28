@@ -26,6 +26,10 @@ export interface NadaAcWorkSpaceStudentUser {
         studentType: NadaAcWorkSpaceStudentType
     }
 }
+export type NadaAcWorkSpaceStudentUserPartialProfile = Pick<
+    NadaAcWorkSpaceStudentUser["profile"],
+    "cohort" | "class" | "number" | "firstName" | "lastName"
+>
 
 export interface NadaAcWorkSpaceOtherUser {
     type: NadaAcWorkSpaceUserType.Others
@@ -35,5 +39,12 @@ export interface NadaAcWorkSpaceOtherUser {
         email: string
     }
 }
+export type NadaAcWorkSpaceOtherUserPartialProfile = Pick<
+    NadaAcWorkSpaceOtherUser["profile"],
+    "firstName" | "lastName"
+>
 
 export type NadaAcWorkSpaceUser = NadaAcWorkSpaceStudentUser | NadaAcWorkSpaceOtherUser
+export type NadaAcWorkSpaceUserPartialProfile =
+    | NadaAcWorkSpaceStudentUserPartialProfile
+    | NadaAcWorkSpaceOtherUserPartialProfile
