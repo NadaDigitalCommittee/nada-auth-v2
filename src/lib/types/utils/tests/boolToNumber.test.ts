@@ -4,12 +4,12 @@ import { expectTypeOf } from "expect-type"
 
 import type { BoolToNumber } from "../boolToNumber"
 
-test("true", () => {
+test("boolToNumber:true", () => {
     expectTypeOf(null! as BoolToNumber<true>).toMatchTypeOf<1>()
 })
-test("false", () => {
+test("boolToNumber:false", () => {
     expectTypeOf(null! as BoolToNumber<false>).toMatchTypeOf<0>()
 })
-test("boolean", () => {
+test("boolToNumber:boolean", () => {
     expectTypeOf(null! as BoolToNumber<boolean>).toMatchTypeOf<0 | 1>()
 })
