@@ -52,7 +52,7 @@
         "wrangler": "^3.105.1"
     },
     "patchedDependencies": {
-        "discord-api-types@0.37.117": "patches/discord-api-types@0.37.117.patch",
+        "discord-api-types@0.37.118": "patches/discord-api-types@0.37.118.patch",
         "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch",
         "type-fest@4.33.0": "patches/type-fest@4.33.0.patch"
     }
