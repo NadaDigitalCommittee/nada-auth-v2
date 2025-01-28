@@ -13,7 +13,7 @@ import {
 export const extractNadaACWorkSpaceUserFromTokenPayload = (
     tokenPayload: SetRequired<TokenPayload, "given_name" | "family_name" | "email">,
 ): NadaAcWorkSpaceUser => {
-    const userDataSource =
+    const userProfileSource =
         /^(?<combinedGrade>[1-6])(?<class>\d)(?<number>\d{2})(?<familyName>.*)$/.exec(
             tokenPayload.family_name,
         )?.groups as
@@ -24,10 +24,10 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
                   number: `${number}`
                   familyName: string
               }
-    if (!userDataSource) {
+    if (!userProfileSource) {
         return {
             type: NadaAcWorkSpaceUserType.Others,
-            data: {
+            profile: {
                 firstName: tokenPayload.given_name,
                 lastName: tokenPayload.family_name,
                 email: tokenPayload.email,
@@ -42,7 +42,7 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
     const JstIssuedYear = JstIssuedAt.getFullYear()
     const JstIssuedMonth = JstIssuedAt.getMonth()
     const JstIssuedAcademicYear = JstIssuedYear - +(JstIssuedMonth < ACADEMIC_YEAR_FIRST_MONTH)
-    const userCombinedGrade = +userDataSource.combinedGrade as CombinedGrade
+    const userCombinedGrade = +userProfileSource.combinedGrade as CombinedGrade
     const userGrade = -~(~-userCombinedGrade % GRADE_SPAN) as Grade
     const userCohort =
         JstIssuedAcademicYear -
@@ -54,14 +54,14 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
             : NadaAcWorkSpaceStudentType.Junior
     return {
         type: NadaAcWorkSpaceUserType.Student,
-        data: {
+        profile: {
             cohort: userCohort,
             combinedGrade: userCombinedGrade,
             grade: userGrade,
-            class: +userDataSource.class,
-            number: +userDataSource.number,
+            class: +userProfileSource.class,
+            number: +userProfileSource.number,
             firstName: tokenPayload.given_name,
-            lastName: userDataSource.familyName,
+            lastName: userProfileSource.familyName,
             email: tokenPayload.email,
             studentType: userStudentType,
         },

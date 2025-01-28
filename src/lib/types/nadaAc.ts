@@ -14,7 +14,7 @@ export type Grade = 1 | 2 | 3
 
 export interface NadaAcWorkSpaceStudentUser {
     type: NadaAcWorkSpaceUserType.Student
-    data: {
+    profile: {
         cohort: number
         combinedGrade: CombinedGrade
         grade: Grade
@@ -29,7 +29,7 @@ export interface NadaAcWorkSpaceStudentUser {
 
 export interface NadaAcWorkSpaceOtherUser {
     type: NadaAcWorkSpaceUserType.Others
-    data: {
+    profile: {
         firstName: string
         lastName: string
         email: string
