@@ -4,12 +4,23 @@ import { expectTypeOf } from "expect-type"
 
 import type { RepeatArray } from "../repeatArray"
 
-test("x0", () => {
-    expectTypeOf(null! as RepeatArray<["First", "Second", "Third"], 0>).toMatchTypeOf<[]>()
+type TupleA = [42, "string", boolean, object, 334n]
+type TupleB = [() => number, Record<string, unknown>, symbol]
+test("RepeatArray:0", () => {
+    expectTypeOf(null! as RepeatArray<TupleA, 0>).toMatchTypeOf<[]>()
 })
 
-test("x3", () => {
-    expectTypeOf(null! as RepeatArray<["First", "Second", "Third"], 3>).toMatchTypeOf<
-        ["First", "Second", "Third", "First", "Second", "Third", "First", "Second", "Third"]
+test("RepeatArray:positive number", () => {
+    expectTypeOf(null! as RepeatArray<TupleA, 3>).toMatchTypeOf<[...TupleA, ...TupleA, ...TupleA]>()
+})
+test("RepeatArray:negative number", () => {
+    expectTypeOf(null! as RepeatArray<TupleA, -3>).toMatchTypeOf<[]>()
+})
+test("RepeatArray:union", () => {
+    expectTypeOf(null! as RepeatArray<TupleA | TupleB, 2 | 3>).toMatchTypeOf<
+        | [...TupleA, ...TupleA]
+        | [...TupleA, ...TupleA, ...TupleA]
+        | [...TupleB, ...TupleB]
+        | [...TupleB, ...TupleB, ...TupleB]
     >()
 })
