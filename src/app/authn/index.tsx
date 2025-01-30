@@ -1,3 +1,4 @@
+import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import {
     type RESTPatchAPIWebhookWithTokenMessageJSONBody,
@@ -17,8 +18,6 @@ import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/k
 import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
-const Layout = createLayout({ head: <title>Google でサインイン</title> })
-
 const app = new Hono<Env>().get(
     "/",
     vValidator(
@@ -27,6 +26,7 @@ const app = new Hono<Env>().get(
             token: v.optional($RequestToken),
         }),
     ),
+    reactRenderer(createLayout({ head: <title>Google でサインイン</title> })),
     async (c) => {
         const authNRequestRecord = c.env.AuthNRequests
         const sessionRecord = c.env.Sessions
@@ -46,12 +46,14 @@ const app = new Hono<Env>().get(
             } else return getCookie(c, sharedCookieNames.sessionId)
         })()
         if (!sessionId) {
-            return c.html(<Layout>トークンが無効です。</Layout>, 400)
+            c.status(400)
+            return c.render(<main>トークンが無効です。</main>)
         }
         const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) {
-            return c.html(<Layout>セッションが無効です。</Layout>, 400)
+            c.status(400)
+            return c.render(<main>セッションが無効です。</main>)
         }
         const session = sessionParseResult.output
         const errorContext = {

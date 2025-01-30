@@ -1,13 +1,11 @@
-import type { ReactNode } from "hono/jsx"
-
-import type { MaybePromise } from "@/lib/types/utils/maybe"
+import type { ReactNode } from "react"
 
 export const createLayout =
-    ({ head }: { head?: MaybePromise<ReactNode> }) =>
-    ({ children }: { children?: MaybePromise<ReactNode> }) => (
+    ({ head }: { head?: ReactNode }) =>
+    ({ children }: { children?: ReactNode }) => (
         <html>
             <head>
-                <meta charset="utf-8" />
+                <meta charSet="utf-8" />
                 <meta name="viewport" content="width=device-width,initial-scale=1" />
                 {head}
             </head>
