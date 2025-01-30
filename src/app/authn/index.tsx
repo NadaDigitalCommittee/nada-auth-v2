@@ -7,32 +7,17 @@ import {
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { getCookie, setCookie } from "hono/cookie"
-import { Style } from "hono/css"
-import type { FC } from "hono/jsx"
 import * as v from "valibot"
 
 import type { AppType } from "@/app"
+import { createLayout } from "@/lib/components/layout"
 import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/kvNamespaces"
 import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
-const Layout: FC = ({ children }) => {
-    return (
-        <html>
-            <head>
-                <meta charset="utf-8" />
-                <meta name="viewport" content="width=device-width,initial-scale=1" />
-                <title>Google でサインイン</title>
-                <Style />
-            </head>
-            <body>
-                <main>{children}</main>
-            </body>
-        </html>
-    )
-}
+const Layout = createLayout({ head: <title>Google でサインイン</title> })
 
 const app = new Hono<Env>().get(
     "/",
