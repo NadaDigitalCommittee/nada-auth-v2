@@ -4,7 +4,7 @@ import type { MaybePromise } from "@/lib/types/utils/maybe"
 
 export const createLayout =
     ({ head }: { head?: MaybePromise<ReactNode> }) =>
-    ({ children }: { children?: ReactNode }) => (
+    ({ children }: { children?: MaybePromise<ReactNode> }) => (
         <html>
             <head>
                 <meta charset="utf-8" />
