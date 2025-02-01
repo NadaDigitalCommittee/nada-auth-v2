@@ -37,7 +37,7 @@ export const component = {
 /**
  * @package
  */
-export const handler: ComponentHandler<Env> = async (c) => {
+export const handler: ComponentHandler<Env, "Button"> = async (c) => {
     const guildConfigRecord = c.env.GuildConfigs
     const authNRequestRecord = c.env.AuthNRequests
     const sessionRecord = c.env.Sessions
