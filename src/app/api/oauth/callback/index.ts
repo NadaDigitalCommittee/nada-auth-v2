@@ -238,15 +238,15 @@ const app = new Hono<Env>().get(
                 })
         }
         const embedFields = (() => {
-            const { type: userType, data: userData } = nadaACWorkSpaceUser
+            const { type: userType, profile: userProfile } = nadaACWorkSpaceUser
             const commonEmbedFields = [
                 {
                     name: "名前",
-                    value: `${userData.lastName} ${userData.firstName} (<@${session.user.id}>)`,
+                    value: `${userProfile.lastName} ${userProfile.firstName} (<@${session.user.id}>)`,
                 },
                 {
                     name: "メールアドレス",
-                    value: userData.email,
+                    value: userProfile.email,
                 },
             ]
             switch (userType) {
@@ -254,17 +254,17 @@ const app = new Hono<Env>().get(
                     return [
                         {
                             name: "学年",
-                            value: `${userData.studentType}${userData.grade} (${userData.cohort}回生)`,
+                            value: `${userProfile.studentType}${userProfile.grade} (${userProfile.cohort}回生)`,
                             inline: true,
                         },
                         {
                             name: "組",
-                            value: `${userData.class}組`,
+                            value: `${userProfile.class}組`,
                             inline: true,
                         },
                         {
                             name: "出席番号",
-                            value: `${userData.number}番`,
+                            value: `${userProfile.number}番`,
                             inline: true,
                         },
                         ...commonEmbedFields,

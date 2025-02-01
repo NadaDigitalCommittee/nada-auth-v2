@@ -53,9 +53,9 @@ export const formatNickname = (
         // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
         switch (formatSpecifier) {
             case FormatSpecifier.FirstName:
-                return user.data.firstName
+                return user.profile.firstName
             case FormatSpecifier.LastName:
-                return user.data.lastName
+                return user.profile.lastName
             case FormatSpecifier.PercentSignEscape:
                 return "%"
         }
@@ -63,17 +63,17 @@ export const formatNickname = (
             case NadaAcWorkSpaceUserType.Student:
                 switch (formatSpecifier) {
                     case FormatSpecifier.Grade:
-                        return `${user.data.grade}`
+                        return `${user.profile.grade}`
                     case FormatSpecifier.CombinedGrade:
-                        return `${user.data.combinedGrade}`
+                        return `${user.profile.combinedGrade}`
                     case FormatSpecifier.Class:
-                        return `${user.data.class}`
+                        return `${user.profile.class}`
                     case FormatSpecifier.Number:
-                        return `${user.data.number}`
+                        return `${user.profile.number}`
                     case FormatSpecifier.Cohort:
-                        return `${user.data.cohort}`
+                        return `${user.profile.cohort}`
                     case FormatSpecifier.StudentType:
-                        return user.data.studentType
+                        return user.profile.studentType
                 }
                 break
             case NadaAcWorkSpaceUserType.Others:
