@@ -22,7 +22,7 @@
         ]
     },
     "dependencies": {
-        "@chakra-ui/react": "^3.6.0",
+        "@chakra-ui/react": "^3.7.0",
         "@discordjs/rest": "^2.4.2",
         "@emotion/react": "^11.14.0",
         "@hono/react-renderer": "^0.2.1",
