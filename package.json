@@ -3,14 +3,12 @@
     "scripts": {
         "dev": "wrangler dev --live-reload --env=dev",
         "deploy": "wrangler deploy --minify",
-        "prebuild": "bun --env-file=./.prod.vars run ./src/scripts/register.ts",
-        "prebuild-dev": "bun --env-file=./.dev.vars run ./src/scripts/register.ts",
+        "register": "bun --env-file=./.prod.vars run ./src/scripts/register.ts",
+        "register-dev": "bun --env-file=./.dev.vars run ./src/scripts/register.ts",
         "check-outdated-patches": "bun run ./src/scripts/check-outdated-patches.ts",
         "lint:eslint": "eslint .",
         "lint:prettier": "prettier --check .",
         "lint": "bun lint:prettier && bun lint:eslint",
-        "lint-staged": "lint-staged",
-        "tsc": "tsc",
         "prepare": "husky"
     },
     "lint-staged": {
