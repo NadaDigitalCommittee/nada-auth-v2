@@ -21,11 +21,11 @@
         ]
     },
     "dependencies": {
-        "@chakra-ui/react": "^3.7.0",
         "@discordjs/rest": "^2.4.3",
         "@emotion/react": "^11.14.0",
         "@hono/react-renderer": "^0.2.1",
         "@hono/valibot-validator": "^0.5.2",
+        "@mui/material": "^6.4.4",
         "crypto-browserify": "^3.12.1",
         "discord-api-types": "^0.37.119",
         "discord-hono": "^0.12.0",

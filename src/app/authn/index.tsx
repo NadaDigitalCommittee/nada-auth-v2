@@ -1,7 +1,8 @@
-import { Alert } from "@chakra-ui/react"
 import { css } from "@emotion/react"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
+import { AlertTitle } from "@mui/material"
+import Alert from "@mui/material/Alert"
 import {
     type RESTPatchAPIWebhookWithTokenMessageJSONBody,
     type RESTPatchAPIWebhookWithTokenMessageResult,
@@ -22,18 +23,15 @@ import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
 const ErrorAlert = ({ title, description }: { title: ReactNode; description: ReactNode }) => (
-    <Alert.Root
-        status="error"
+    <Alert
+        severity="error"
         css={css`
             max-width: 70rem;
         `}
     >
-        <Alert.Indicator />
-        <Alert.Content>
-            <Alert.Title>{title}</Alert.Title>
-            <Alert.Description>{description}</Alert.Description>
-        </Alert.Content>
-    </Alert.Root>
+        <AlertTitle>{title}</AlertTitle>
+        {description}
+    </Alert>
 )
 
 const app = new Hono<Env>().get(

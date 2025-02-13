@@ -1,4 +1,3 @@
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
 import type { ReactNode } from "react"
 
 export const createLayout =
@@ -10,8 +9,6 @@ export const createLayout =
                 <meta name="viewport" content="width=device-width,initial-scale=1" />
                 {head}
             </head>
-            <body>
-                <ChakraProvider value={defaultSystem}>{children}</ChakraProvider>
-            </body>
+            <body>{children}</body>
         </html>
     )
