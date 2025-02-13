@@ -6,7 +6,7 @@
         "strict": true,
         "skipLibCheck": true,
         "verbatimModuleSyntax": true,
-        "lib": ["ESNext"],
+        "lib": ["ESNext", "DOM"],
         "types": ["@cloudflare/workers-types/2023-07-01", "bun"],
         "jsx": "react-jsx",
         "jsxImportSource": "@emotion/react",

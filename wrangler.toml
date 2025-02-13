@@ -4,7 +4,7 @@ compatibility_date = "2024-12-06"
 minify = true
 compatibility_flags = ["nodejs_compat"]
 [assets]
-directory = "public"
+directory = "dist"
 binding = "ASSETS"
 run_worker_first = true
 
