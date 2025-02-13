@@ -80,7 +80,7 @@ export const handler: ComponentHandler<Env, "Button"> = async (c) => {
         return c.ephemeral(true).res(":person_tipping_hand: あなたはすでに認証が完了しています。")
     }
     const userAuthNRequest = await authNRequestRecord.get(`userId:${user.id}`)
-    if (userAuthNRequest && c.env.WORKER_ENV !== "development")
+    if (userAuthNRequest && import.meta.env.PROD)
         return c.ephemeral(true).res(
             ":warning: 現在の認証セッションが完了または失効する前に重複してリクエストを行うことはできません。\
 リンクを破棄してしまった場合は、時間をおいて再試行してください。",
@@ -95,8 +95,7 @@ export const handler: ComponentHandler<Env, "Button"> = async (c) => {
         expirationTtl: requestTokenExpirationTtl,
     })
     await sessionRecord.put(sessionId, JSON.stringify(session), {
-        expirationTtl:
-            c.env.WORKER_ENV === "development" ? sessionExpirationTtlDev : sessionExpirationTtl,
+        expirationTtl: import.meta.env.DEV ? sessionExpirationTtlDev : sessionExpirationTtl,
     })
     const honoClient = hc<AppType>(new URL(c.req.url).origin)
     const authNUrl = honoClient.authn.$url({ query: { token: authNRequestToken } })

@@ -22,7 +22,7 @@ const assetsHandler: H<Env> = async (c) => {
     if (!res.ok && isContentfulStatusCode(status))
         return c.text(`${status} ${res.statusText}`, status)
     res.headers.set("Access-Control-Allow-Origin", "*")
-    res.headers.set("Cache-Control", "max-age=86400")
+    res.headers.set("Cache-Control", `max-age=${import.meta.env.DEV ? 0 : 86400}`)
     return res
 }
 
@@ -35,6 +35,7 @@ const app = new Hono()
     .route("/authn", authn)
     .get("/robots.txt", assetsHandler)
     .get("/assets/*", assetsHandler)
+    .get("/static/*", assetsHandler)
 
 export type AppType = typeof app
 export default app

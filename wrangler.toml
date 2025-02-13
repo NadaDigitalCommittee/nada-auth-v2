@@ -4,12 +4,13 @@ compatibility_date = "2024-12-06"
 minify = true
 compatibility_flags = ["nodejs_compat"]
 [assets]
-directory = "public"
+directory = "dist"
 binding = "ASSETS"
 run_worker_first = true
 
-[vars]
-WORKER_ENV = "production"
+[define]
+"import.meta.env.DEV" = "false"
+"import.meta.env.PROD" = "true"
 
 [[kv_namespaces]]
 binding = "GuildConfigs"
@@ -23,8 +24,9 @@ id = "3d055498d36c4cce8f87feb19ee1a0f1"
 binding = "Sessions"
 id = "8d9392625ca04727a87a5ddf09a2b459"
 
-[env.dev.vars]
-WORKER_ENV = "development"
+[env.dev.define]
+"import.meta.env.DEV" = "true"
+"import.meta.env.PROD" = "false"
 
 [[env.dev.kv_namespaces]]
 binding = "GuildConfigs"

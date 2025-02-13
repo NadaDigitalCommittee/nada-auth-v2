@@ -5,6 +5,14 @@ import type { Entries } from "./utils/entries"
 import type { FromEntries } from "./utils/fromEntries"
 import type { Reverse } from "./utils/reverse"
 
+interface DevEnv {
+    DEV: true
+    PROD: false
+}
+interface ProdEnv {
+    DEV: false
+    PROD: true
+}
 declare global {
     interface String {
         at<T extends string, I extends number>(this: T, index: I): At<Split<T, "">, I>
@@ -25,6 +33,10 @@ declare global {
         entries<T extends Record<PropertyKey, unknown> | ArrayLike<unknown>>(o: T): Entries<T>
         fromEntries<T extends Array<readonly [PropertyKey, unknown]>>(entries: T): FromEntries<T>
         keys<T>(o: T): (keyof T)[]
+    }
+
+    interface ImportMeta {
+        env: NodeJS.ProcessEnv & (DevEnv | ProdEnv)
     }
 }
 

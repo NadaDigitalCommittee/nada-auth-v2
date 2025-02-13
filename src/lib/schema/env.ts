@@ -19,7 +19,6 @@ const $DiscordApplicationEmojis = v.object({
 const $AllowedEmailDomains = v.array(v.string())
 
 export const $EnvVars = v.object({
-    WORKER_ENV: v.optional(v.union([v.literal("development"), v.literal("production")])),
     DISCORD_TOKEN: v.string(),
     DISCORD_APPLICATION_ID: v.string(),
     DISCORD_PUBLIC_KEY: v.string(),
