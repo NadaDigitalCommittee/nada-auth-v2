@@ -5,8 +5,9 @@ import fs from "node:fs/promises"
 import path from "node:path"
 import { parseArgs } from "node:util"
 
-const glob = new Bun.Glob("./src/components/islands/*/client.tsx")
-const islands = await Array.fromAsync(glob.scan(import.meta.dirname), async (clientModulePath) => {
+const clientModuleGlob = new Bun.Glob("./src/components/islands/*/client.tsx")
+// prettier-ignore
+const islands = await Array.fromAsync(clientModuleGlob.scan(import.meta.dirname), async (clientModulePath) => {
     const coreModulePath = path.resolve(path.dirname(clientModulePath), "_core.tsx")
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const coreModule: Record<string, unknown> = await import(coreModulePath)
@@ -58,7 +59,10 @@ const buildOptions = {
 
 if (await fs.exists(buildOptions.outdir)) {
     console.log(`Clearing ${buildOptions.outdir}...`)
-    await fs.rm(buildOptions.outdir, { recursive: true, force: true })
+    const buildOutputGlob = new Bun.Glob(path.normalize(`${buildOptions.outdir}/**`))
+    for await (const buildOutput of buildOutputGlob.scan(import.meta.dirname)) {
+        await fs.rm(buildOutput, { force: true })
+    }
 }
 if (values.watch) {
     const ctx = await esbuild.context(buildOptions)
