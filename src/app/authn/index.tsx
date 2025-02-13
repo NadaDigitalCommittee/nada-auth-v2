@@ -14,7 +14,7 @@ import type { ReactNode } from "react"
 import * as v from "valibot"
 
 import type { AppType } from "@/app"
-import { createLayout } from "@/lib/components/layout"
+import { createLayout } from "@/components/layout"
 import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/kvNamespaces"
