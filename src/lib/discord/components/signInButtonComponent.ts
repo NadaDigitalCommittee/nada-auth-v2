@@ -5,7 +5,7 @@ import {
     ButtonStyle,
     ComponentType,
 } from "discord-api-types/v10"
-import { type ComponentHandler, Components } from "discord-hono"
+import { type Button, type ComponentHandler, Components } from "discord-hono"
 import { hc } from "hono/client"
 import type { ValueOf } from "type-fest"
 import * as v from "valibot"
@@ -37,7 +37,7 @@ export const component = {
 /**
  * @package
  */
-export const handler: ComponentHandler<Env, "Button"> = async (c) => {
+export const handler: ComponentHandler<Env, Button> = async (c) => {
     const guildConfigRecord = c.env.GuildConfigs
     const authNRequestRecord = c.env.AuthNRequests
     const sessionRecord = c.env.Sessions
