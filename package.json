@@ -30,7 +30,7 @@
         "discord-api-types": "^0.37.119",
         "discord-hono": "^0.16.1",
         "google-auth-library": "^9.15.1",
-        "hono": "^4.7.0",
+        "hono": "^4.7.1",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "valibot": "^1.0.0-rc.0"
