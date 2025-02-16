@@ -22,8 +22,8 @@ import { $TokenPayload } from "@/lib/schema/tokenPayload"
 import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { sharedCookieNames } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
-import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/extractNadaACWorkSpaceUserFromTokenPayload"
 import { formatNickname } from "@/lib/utils/formatNickname"
+import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/nadaAc"
 
 const app = new Hono<Env>().get(
     "/",
