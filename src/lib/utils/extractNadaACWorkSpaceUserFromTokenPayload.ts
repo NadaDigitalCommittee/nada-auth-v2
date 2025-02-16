@@ -1,6 +1,8 @@
 import type { TokenPayload } from "google-auth-library"
 import type { SetRequired } from "type-fest"
 
+import { getJstAcademicYear } from "./date"
+
 import {
     type CombinedGrade,
     type Grade,
@@ -34,18 +36,13 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
             },
         }
     }
-    const ACADEMIC_YEAR_FIRST_MONTH = 3 // 4 - 1
     const OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT = 1941
     const GRADE_SPAN = 3
-    const UtcIssuedAt = new Date(tokenPayload.iat * 1000)
-    const JstIssuedAt = new Date(UtcIssuedAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }))
-    const JstIssuedYear = JstIssuedAt.getFullYear()
-    const JstIssuedMonth = JstIssuedAt.getMonth()
-    const JstIssuedAcademicYear = JstIssuedYear - +(JstIssuedMonth < ACADEMIC_YEAR_FIRST_MONTH)
+    const jstIssuedAcademicYear = getJstAcademicYear(new Date(tokenPayload.iat * 1000))
     const userCombinedGrade = +userProfileSource.combinedGrade as CombinedGrade
     const userGrade = -~(~-userCombinedGrade % GRADE_SPAN) as Grade
     const userCohort =
-        JstIssuedAcademicYear -
+        jstIssuedAcademicYear -
         OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT -
         userCombinedGrade
     const userStudentType =
