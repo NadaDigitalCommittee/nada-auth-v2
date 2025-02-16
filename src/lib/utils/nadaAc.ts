@@ -11,6 +11,12 @@ import {
     NadaAcWorkSpaceUserType,
 } from "@/lib/types/nadaAc"
 
+export const OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT = 1941
+export const GRADE_SPAN = 3
+
+export const getCohort = (combinedGrade: CombinedGrade, jstAcademicYear: number) =>
+    jstAcademicYear - OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT - combinedGrade
+
 // TODO: クラスにしてformatNicknameをメソッドに組み込む
 export const extractNadaACWorkSpaceUserFromTokenPayload = (
     tokenPayload: SetRequired<TokenPayload, "given_name" | "family_name" | "email">,
@@ -36,15 +42,10 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
             },
         }
     }
-    const OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT = 1941
-    const GRADE_SPAN = 3
     const jstIssuedAcademicYear = getJstAcademicYear(new Date(tokenPayload.iat * 1000))
     const userCombinedGrade = +userProfileSource.combinedGrade as CombinedGrade
     const userGrade = -~(~-userCombinedGrade % GRADE_SPAN) as Grade
-    const userCohort =
-        jstIssuedAcademicYear -
-        OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT -
-        userCombinedGrade
+    const userCohort = getCohort(userCombinedGrade, jstIssuedAcademicYear)
     const userStudentType =
         userCombinedGrade > GRADE_SPAN
             ? NadaAcWorkSpaceStudentType.Senior
