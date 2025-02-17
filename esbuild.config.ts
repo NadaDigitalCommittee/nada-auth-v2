@@ -8,7 +8,7 @@ import { parseArgs } from "node:util"
 const clientModuleGlob = new Bun.Glob("./src/components/islands/*/client.tsx")
 // prettier-ignore
 const islands = await Array.fromAsync(clientModuleGlob.scan(import.meta.dirname), async (clientModulePath) => {
-    const coreModulePath = path.resolve(path.dirname(clientModulePath), "_core.tsx")
+    const coreModulePath = path.resolve(path.dirname(clientModulePath), "core.tsx")
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const coreModule: Record<string, unknown> = await import(coreModulePath)
     if (typeof coreModule.name === "string") {
