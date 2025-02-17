@@ -44,7 +44,7 @@
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
         "@types/bun": "^1.2.2",
         "@types/react": "^19.0.9",
-        "@types/react-dom": "^19.0.3",
+        "@types/react-dom": "^19.0.4",
         "concurrently": "^9.1.2",
         "esbuild": "^0.25.0",
         "esbuild-plugin-copy": "^2.1.1",
