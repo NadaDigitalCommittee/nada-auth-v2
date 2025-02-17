@@ -24,7 +24,7 @@
         "@chakra-ui/react": "^3.7.0",
         "@discordjs/rest": "^2.4.3",
         "@emotion/react": "^11.14.0",
-        "@hono/react-renderer": "^0.2.1",
+        "@hono/react-renderer": "^0.3.0",
         "@hono/valibot-validator": "^0.5.2",
         "crypto-browserify": "^3.12.1",
         "discord-api-types": "^0.37.119",
