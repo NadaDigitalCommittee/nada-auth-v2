@@ -1,3 +1,4 @@
+import { css } from "@mui/material"
 import type { ReactNode } from "react"
 
 export const createLayout =
@@ -9,6 +10,13 @@ export const createLayout =
                 <meta name="viewport" content="width=device-width,initial-scale=1" />
                 {head}
             </head>
-            <body>{children}</body>
+            <body
+                css={css`
+                    margin: 0;
+                    padding: 0;
+                `}
+            >
+                {children}
+            </body>
         </html>
     )
