@@ -30,7 +30,7 @@
         "discord-api-types": "^0.37.119",
         "discord-hono": "^0.16.1",
         "google-auth-library": "^9.15.1",
-        "hono": "^4.7.1",
+        "hono": "^4.7.2",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-hook-form": "^7.54.2",
@@ -43,7 +43,7 @@
         "@eslint/js": "^9.20.0",
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
         "@types/bun": "^1.2.2",
-        "@types/react": "^19.0.9",
+        "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",
         "concurrently": "^9.1.2",
         "esbuild": "^0.25.0",
@@ -59,8 +59,8 @@
         "prettier-plugin-toml": "^2.0.1",
         "type-fest": "^4.33.0",
         "typescript": "^5.7.3",
-        "typescript-eslint": "^8.24.0",
-        "wrangler": "^3.109.1"
+        "typescript-eslint": "^8.24.1",
+        "wrangler": "^3.109.2"
     },
     "patchedDependencies": {
         "discord-api-types@0.37.119": "patches/discord-api-types@0.37.119.patch",
