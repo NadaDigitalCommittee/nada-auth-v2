@@ -37,7 +37,7 @@
         "lint-staged": "^15.4.3",
         "prettier": "^3.5.1",
         "prettier-plugin-toml": "^2.0.2",
-        "type-fest": "^4.33.0",
+        "type-fest": "^4.35.0",
         "typescript": "^5.7.3",
         "typescript-eslint": "^8.24.1",
         "wrangler": "^3.109.2",
@@ -45,7 +45,6 @@
     },
   },
   "patchedDependencies": {
-    "type-fest@4.33.0": "patches/type-fest@4.33.0.patch",
     "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch",
     "discord-api-types@0.37.119": "patches/discord-api-types@0.37.119.patch",
   },
@@ -988,7 +987,7 @@
 
     "type-check": ["type-check@0.4.0", "", { "dependencies": { "prelude-ls": "^1.2.1" } }, "sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew=="],
 
-    "type-fest": ["type-fest@4.33.0", "", {}, "sha512-s6zVrxuyKbbAsSAD5ZPTB77q4YIdRctkTbJ2/Dqlinwz+8ooH2gd+YA7VA6Pa93KML9GockVvoxjZ2vHP+mu8g=="],
+    "type-fest": ["type-fest@4.35.0", "", {}, "sha512-2/AwEFQDFEy30iOLjrvHDIH7e4HEWH+f1Yl1bI5XMqzuoCUqwYCdxachgsgv0og/JdVZUhbfjcJAoHj5L1753A=="],
 
     "typescript": ["typescript@5.7.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw=="],
 
