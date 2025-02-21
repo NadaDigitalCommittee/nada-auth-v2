@@ -7,12 +7,17 @@ export const isPlainObject = (obj: unknown) => {
     return proto === Object.prototype || proto === null
 }
 
-type ObjectPathsReturnType<T> = Array<Or<IsUnknown<T>, IsAny<T>> extends true ? string : Paths<T>>
+type ObjectPathsReturnType<T> = Array<
+    Or<IsUnknown<T>, IsAny<T>> extends true ? string : Paths<T, { bracketNotation: false }>
+>
 type ObjectPathsOptions = Partial<{
     fullPathOnly: boolean
 }>
 
-export const objectPaths = <T>(obj: T, options?: ObjectPathsOptions): ObjectPathsReturnType<T> => {
+export const objectPaths = <const T>(
+    obj: T,
+    options?: ObjectPathsOptions,
+): ObjectPathsReturnType<T> => {
     if (obj == null) return []
     if (isPlainObject(obj) || Array.isArray(obj)) {
         // Object.entriesでsymbolはスキップされる
