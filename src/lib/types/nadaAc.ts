@@ -1,3 +1,5 @@
+import type { PickDeep } from "type-fest"
+
 export enum NadaAcWorkSpaceUserType {
     Student = 0,
     Others = -1,
@@ -26,9 +28,9 @@ export interface NadaAcWorkSpaceStudentUser {
         studentType: NadaAcWorkSpaceStudentType
     }
 }
-export type NadaAcWorkSpaceStudentUserPartialProfile = Pick<
-    NadaAcWorkSpaceStudentUser["profile"],
-    "cohort" | "class" | "number" | "firstName" | "lastName"
+export type NadaAcWorkSpacePartialStudentUser = PickDeep<
+    NadaAcWorkSpaceStudentUser,
+    "type" | `profile.${"cohort" | "class" | "number" | "firstName" | "lastName"}`
 >
 
 export interface NadaAcWorkSpaceOtherUser {
@@ -39,12 +41,12 @@ export interface NadaAcWorkSpaceOtherUser {
         email: string
     }
 }
-export type NadaAcWorkSpaceOtherUserPartialProfile = Pick<
-    NadaAcWorkSpaceOtherUser["profile"],
-    "firstName" | "lastName"
+export type NadaAcWorkSpacePartialOtherUser = PickDeep<
+    NadaAcWorkSpaceOtherUser,
+    "type" | `profile.${"firstName" | "lastName"}`
 >
 
 export type NadaAcWorkSpaceUser = NadaAcWorkSpaceStudentUser | NadaAcWorkSpaceOtherUser
-export type NadaAcWorkSpaceUserPartialProfile =
-    | NadaAcWorkSpaceStudentUserPartialProfile
-    | NadaAcWorkSpaceOtherUserPartialProfile
+export type NadaAcWorkSpacePartialUser =
+    | NadaAcWorkSpacePartialStudentUser
+    | NadaAcWorkSpacePartialOtherUser

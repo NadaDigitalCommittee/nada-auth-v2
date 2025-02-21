@@ -6,12 +6,12 @@ import {
     type CombinedGrade,
     type Grade,
     type NadaAcWorkSpaceOtherUser,
-    type NadaAcWorkSpaceOtherUserPartialProfile,
+    type NadaAcWorkSpacePartialOtherUser,
+    type NadaAcWorkSpacePartialStudentUser,
+    type NadaAcWorkSpacePartialUser,
     NadaAcWorkSpaceStudentType,
     type NadaAcWorkSpaceStudentUser,
-    type NadaAcWorkSpaceStudentUserPartialProfile,
     type NadaAcWorkSpaceUser,
-    type NadaAcWorkSpaceUserPartialProfile,
     NadaAcWorkSpaceUserType,
 } from "@/lib/types/nadaAc"
 
@@ -45,15 +45,18 @@ export const $NadaAcWorkSpaceStudentUser = v.pipe(
     }),
     v.transform(id<NadaAcWorkSpaceStudentUser>),
 )
-export const $NadaAcWorkSpaceStudentUserPartialProfile = v.pipe(
+export const $NadaAcWorkSpacePartialStudentUser = v.pipe(
     v.object({
-        cohort: v.number(),
-        class: v.number(),
-        number: v.number(),
-        firstName: v.string(),
-        lastName: v.string(),
+        type: v.literal(NadaAcWorkSpaceUserType.Student),
+        profile: v.object({
+            cohort: v.number(),
+            class: v.number(),
+            number: v.number(),
+            firstName: v.string(),
+            lastName: v.string(),
+        }),
     }),
-    v.transform(id<NadaAcWorkSpaceStudentUserPartialProfile>),
+    v.transform(id<NadaAcWorkSpacePartialStudentUser>),
 )
 
 export const $NadaAcWorkSpaceOtherUser = v.pipe(
@@ -67,19 +70,22 @@ export const $NadaAcWorkSpaceOtherUser = v.pipe(
     }),
     v.transform(id<NadaAcWorkSpaceOtherUser>),
 )
-export const $NadaAcWorkSpaceOtherUserPartialProfile = v.pipe(
+export const $NadaAcWorkSpacePartialOtherUser = v.pipe(
     v.object({
-        firstName: v.string(),
-        lastName: v.string(),
+        type: v.literal(NadaAcWorkSpaceUserType.Others),
+        profile: v.object({
+            firstName: v.string(),
+            lastName: v.string(),
+        }),
     }),
-    v.transform(id<NadaAcWorkSpaceOtherUserPartialProfile>),
+    v.transform(id<NadaAcWorkSpacePartialOtherUser>),
 )
 
 export const $NadaAcWorkSpaceUser = v.pipe(
     v.union([$NadaAcWorkSpaceStudentUser, $NadaAcWorkSpaceOtherUser]),
     v.transform(id<NadaAcWorkSpaceUser>),
 )
-export const $NadaAcWorkSpaceUserPartialProfile = v.pipe(
-    v.union([$NadaAcWorkSpaceStudentUserPartialProfile, $NadaAcWorkSpaceOtherUserPartialProfile]),
-    v.transform(id<NadaAcWorkSpaceUserPartialProfile>),
+export const $NadaAcWorkSpacePartialUser = v.pipe(
+    v.union([$NadaAcWorkSpacePartialStudentUser, $NadaAcWorkSpacePartialOtherUser]),
+    v.transform(id<NadaAcWorkSpacePartialUser>),
 )
