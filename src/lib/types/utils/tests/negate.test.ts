@@ -5,24 +5,24 @@ import { expectTypeOf } from "expect-type"
 import type { NegateBool, NegateNumber } from "../negate"
 
 test("NegateNumber:positive number", () => {
-    expectTypeOf(null! as NegateNumber<10>).toMatchTypeOf<-10>()
+    expectTypeOf(null! as NegateNumber<10>).toEqualTypeOf<-10>()
 })
 test("NegateNumber:0", () => {
-    expectTypeOf(null! as NegateNumber<0>).toMatchTypeOf<0>()
+    expectTypeOf(null! as NegateNumber<0>).toEqualTypeOf<0>()
 })
 test("NegateNumber:negative number", () => {
-    expectTypeOf(null! as NegateNumber<-10>).toMatchTypeOf<10>()
+    expectTypeOf(null! as NegateNumber<-10>).toEqualTypeOf<10>()
 })
 test("NegateNumber:union", () => {
-    expectTypeOf(null! as NegateNumber<-10 | 4 | -2 | 0>).toMatchTypeOf<10 | -4 | 2 | 0>()
+    expectTypeOf(null! as NegateNumber<-10 | 4 | -2 | 0>).toEqualTypeOf<10 | -4 | 2 | 0>()
 })
 
 test("NegateBool:true", () => {
-    expectTypeOf(null! as NegateBool<true>).toMatchTypeOf<false>()
+    expectTypeOf(null! as NegateBool<true>).toEqualTypeOf<false>()
 })
 test("NegateBool:false", () => {
-    expectTypeOf(null! as NegateBool<false>).toMatchTypeOf<true>()
+    expectTypeOf(null! as NegateBool<false>).toEqualTypeOf<true>()
 })
 test("NegateBool:union", () => {
-    expectTypeOf(null! as NegateBool<boolean>).toMatchTypeOf<boolean>()
+    expectTypeOf(null! as NegateBool<boolean>).toBeBoolean()
 })
