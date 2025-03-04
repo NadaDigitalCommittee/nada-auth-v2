@@ -28,18 +28,14 @@ try {
             )
         }
         const [installedPackage] = bunLockFileInstalledPackage
-        // https://github.com/sindresorhus/type-fest/pull/1047
-        const [, installedPackageVersion] = installedPackage.split("@") as unknown as [
-            string,
-            string,
-        ]
+        const [, installedPackageVersion] = installedPackage.split("@")
         if (installedPackageVersion !== patchedPackageVersion) {
             console.write("✗ Fail\n")
             throw new Error(`Patched dependency "${patchedPackage}" is outdated.
             patched version:   ${patchedPackage}
             installed version: ${installedPackage}`)
         }
-        console.write(`✓ Pass\n`)
+        console.write("✓ Pass\n")
     })
 } finally {
     await Bun.$`git reset --hard HEAD && git clean -f`.quiet()

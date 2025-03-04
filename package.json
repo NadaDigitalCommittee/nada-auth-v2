@@ -61,7 +61,6 @@
     },
     "patchedDependencies": {
         "discord-api-types@0.37.119": "patches/discord-api-types@0.37.119.patch",
-        "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch",
-        "type-fest@4.33.0": "patches/type-fest@4.33.0.patch"
+        "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch"
     }
 }
