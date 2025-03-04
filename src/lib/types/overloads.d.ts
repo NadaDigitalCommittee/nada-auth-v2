@@ -15,8 +15,14 @@ interface ProdEnv {
 }
 declare global {
     interface String {
-        at<T extends string, I extends number>(this: T, index: I): At<Split<T, "", { strictLiteralChecks: true }>, I>
-        split<T extends string, S extends string>(this: T, separator: S): Split<T, S, { strictLiteralChecks: true }>
+        at<T extends string, I extends number>(
+            this: T,
+            index: I,
+        ): At<Split<T, "", { strictLiteralChecks: true }>, I>
+        split<T extends string, S extends string>(
+            this: T,
+            separator: S,
+        ): Split<T, S, { strictLiteralChecks: true }>
     }
 
     interface Array {
