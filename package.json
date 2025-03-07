@@ -37,7 +37,7 @@
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20250303.0",
-        "@eslint/js": "^9.21.0",
+        "@eslint/js": "^9.22.0",
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
         "@types/bun": "^1.2.4",
         "@types/react": "^19.0.10",
@@ -45,7 +45,7 @@
         "concurrently": "^9.1.2",
         "esbuild": "^0.25.0",
         "esbuild-plugin-copy": "^2.1.1",
-        "eslint": "^9.21.0",
+        "eslint": "^9.22.0",
         "eslint-config-prettier": "^10.1.1",
         "eslint-plugin-import-access": "^2.2.2",
         "expect-type": "^1.2.0",
