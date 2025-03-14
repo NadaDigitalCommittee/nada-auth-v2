@@ -36,5 +36,6 @@
             "platformAutomerge": true,
             "ignoreTests": false
         }
-    ]
+    ],
+    "ignoreDeps": ["@chakra-ui/react"]
 }
