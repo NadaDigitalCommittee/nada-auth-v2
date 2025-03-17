@@ -11,7 +11,7 @@
         "@hono/valibot-validator": "^0.5.2",
         "crypto-browserify": "^3.12.1",
         "discord-api-types": "^0.37.119",
-        "discord-hono": "^0.16.3",
+        "discord-hono": "^0.16.4",
         "google-auth-library": "^9.15.1",
         "hono": "^4.7.4",
         "react": "^19.0.0",
@@ -575,7 +575,7 @@
 
     "discord-api-types": ["discord-api-types@0.37.119", "", {}, "sha512-WasbGFXEB+VQWXlo6IpW3oUv73Yuau1Ig4AZF/m13tXcTKnMpc/mHjpztIlz4+BM9FG9BHQkEXiPto3bKduQUg=="],
 
-    "discord-hono": ["discord-hono@0.16.3", "", {}, "sha512-2JuqQsetDV/rNDgMP1h1oEKcrIt6M+K4CbV6ICkP1iviV0UCuzFZK/5z5QB2h+Bk2O8HDi303aWdJfpz6LQ6Zw=="],
+    "discord-hono": ["discord-hono@0.16.4", "", {}, "sha512-r6efrXZ50Wn3uVYdySH2yHrx5tOhQGb2Ta1ITt6YyGKAPRiL4Sg/Xxew7aipkQdFpOTKaqc9VIVzAcTu6Wf48Q=="],
 
     "ecdsa-sig-formatter": ["ecdsa-sig-formatter@1.0.11", "", { "dependencies": { "safe-buffer": "^5.0.1" } }, "sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ=="],
 
