@@ -33,7 +33,7 @@
         "hono": "^4.7.4",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "valibot": "^1.0.0-rc.4"
+        "valibot": "^1.0.0"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20250317.0",
