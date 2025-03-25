@@ -45,15 +45,29 @@ export const $NadaAcWorkSpaceStudentUser = v.pipe(
     }),
     v.transform(id<NadaAcWorkSpaceStudentUser>),
 )
+
+const $ProfileNameField = v.intersect([
+    v.pipe(v.string(), v.trim(), v.nonEmpty("必須")),
+    v.pipe(v.string(), v.regex(/^(?=\S).*(?<=\S)$/, "先頭または末尾に空白があります。")),
+])
+
 export const $NadaAcWorkSpacePartialStudentUser = v.pipe(
     v.object({
         type: v.literal(NadaAcWorkSpaceUserType.Student),
         profile: v.object({
             cohort: v.number(),
-            class: v.number(),
-            number: v.number(),
-            firstName: v.string(),
-            lastName: v.string(),
+            class: v.pipe(
+                v.number(),
+                v.integer((issue) => `${issue.input} 組はありません。`),
+                v.minValue(1, (issue) => `${issue.input} 組はありません。`),
+            ),
+            number: v.pipe(
+                v.number(),
+                v.integer((issue) => `${issue.input} 番はありません。`),
+                v.minValue(1, (issue) => `${issue.input} 番はありません。`),
+            ),
+            firstName: $ProfileNameField,
+            lastName: $ProfileNameField,
         }),
     }),
     v.transform(id<NadaAcWorkSpacePartialStudentUser>),
@@ -74,8 +88,8 @@ export const $NadaAcWorkSpacePartialOtherUser = v.pipe(
     v.object({
         type: v.literal(NadaAcWorkSpaceUserType.Others),
         profile: v.object({
-            firstName: v.string(),
-            lastName: v.string(),
+            firstName: $ProfileNameField,
+            lastName: $ProfileNameField,
         }),
     }),
     v.transform(id<NadaAcWorkSpacePartialOtherUser>),

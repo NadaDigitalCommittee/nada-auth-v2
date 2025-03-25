@@ -11,6 +11,10 @@ import { FcGoogle } from "react-icons/fc"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
+import {
+    $NadaAcWorkSpacePartialOtherUser,
+    $NadaAcWorkSpacePartialStudentUser,
+} from "@/lib/schema/nadaAc"
 import { vFormFieldValidator } from "@/lib/schema/utils"
 import { type CombinedGrade, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { getJstAcademicYear } from "@/lib/utils/date"
@@ -28,38 +32,14 @@ export const name = "profile-form"
  */
 export const id = `${name}_container`
 
-const $ProfileNameField = v.intersect([
-    v.pipe(v.string(), v.trim(), v.nonEmpty("必須")),
-    v.pipe(v.string(), v.regex(/^(?=\S).*(?<=\S)$/, "先頭または末尾に空白があります。")),
-])
-
 const $NonStudentProfileFormData = v.object({
     isStudent: v.literal(false),
-    type: v.literal(NadaAcWorkSpaceUserType.Others),
-    profile: v.object({
-        lastName: $ProfileNameField,
-        firstName: $ProfileNameField,
-    }),
+    ...$NadaAcWorkSpacePartialOtherUser.entries,
 })
 
 const $StudentProfileFormData = v.object({
     isStudent: v.literal(true),
-    type: v.literal(NadaAcWorkSpaceUserType.Student),
-    profile: v.object({
-        cohort: v.number(),
-        class: v.pipe(
-            v.number(),
-            v.integer((issue) => `${issue.input} 組はありません。`),
-            v.minValue(1, (issue) => `${issue.input} 組はありません。`),
-        ),
-        number: v.pipe(
-            v.number(),
-            v.integer((issue) => `${issue.input} 番はありません。`),
-            v.minValue(1, (issue) => `${issue.input} 番はありません。`),
-        ),
-        lastName: $ProfileNameField,
-        firstName: $ProfileNameField,
-    }),
+    ...$NadaAcWorkSpacePartialStudentUser.entries,
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
