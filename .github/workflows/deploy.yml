@@ -11,10 +11,10 @@ jobs:
         name: Deploy
         steps:
             - uses: actions/checkout@v4
-            - uses: oven-sh/setup-bun@v2
+            - uses: oven-sh/setup-bun@v2.0.1
             - run: bun i --frozen-lockfile
             - run: bun build:client
-            - uses: cloudflare/wrangler-action@v3
+            - uses: cloudflare/wrangler-action@v3.14.1
               with:
                   apiToken: ${{ secrets.CF_API_TOKEN }}
                   accountId: ${{ secrets.CF_ACCOUNT_ID }}
