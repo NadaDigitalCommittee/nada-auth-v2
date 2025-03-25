@@ -7,12 +7,12 @@ import type { Entries } from "../entries"
 import type { FromEntries } from "../fromEntries"
 
 test("Entries/FromEntries:globalThis", () => {
-    expectTypeOf(globalThis).toMatchTypeOf<FromEntries<Entries<typeof globalThis>>>()
+    expectTypeOf(null! as FromEntries<Entries<typeof globalThis>>).toExtend<typeof globalThis>()
 })
 test("Entries/FromEntries:emptyObject", () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    expectTypeOf({}).toMatchTypeOf<FromEntries<Entries<{}>>>()
+    expectTypeOf({}).toEqualTypeOf<FromEntries<Entries<{}>>>()
 })
 test("Entries/FromEntries:UnknownRecord", () => {
-    expectTypeOf(null! as UnknownRecord).toMatchTypeOf<FromEntries<Entries<UnknownRecord>>>()
+    expectTypeOf(null! as UnknownRecord).toEqualTypeOf<FromEntries<Entries<UnknownRecord>>>()
 })

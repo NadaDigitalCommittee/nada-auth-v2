@@ -13,8 +13,6 @@ export const boolTupleToBitmask = <T extends boolean[]>(...tuple: T) =>
  */
 export const valuesToBitmask = <T extends unknown[]>(...values: T) =>
     ({
-        // @ts-expect-error ts2589 型アサーションが二重になっているため?
-        // ここでエラーが出ないように書き換えると今度はこの関数が使われている場所で同じエラーが出る
         bitmask: boolTupleToBitmask(...values.map(Boolean)),
         bindings: values,
     }) as ValuesToBitmask<T>

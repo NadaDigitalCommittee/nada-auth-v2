@@ -1,5 +1,5 @@
 *.vars
-bun.lockb
+bun.lock
 
 public/
 patches/
