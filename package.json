@@ -27,6 +27,7 @@
         "@hono/valibot-validator": "^0.5.2",
         "@mui/material": "^6.4.4",
         "crypto-browserify": "^3.12.1",
+        "decode-formdata": "^0.8.0",
         "discord-api-types": "^0.37.119",
         "discord-hono": "^0.16.4",
         "google-auth-library": "^9.15.1",
