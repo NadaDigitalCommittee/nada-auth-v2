@@ -20,7 +20,13 @@
                 "expect-type",
                 "globals",
                 "prettier-plugin-toml",
-                "wrangler"
+                "wrangler",
+                "@emotion/react",
+                "@emotion/styled",
+                "@mui/icons-material",
+                "react-icons",
+                "esbuild-plugin-copy",
+                "concurrently"
             ],
             "addLabels": ["renovate-automerge"],
             "matchUpdateTypes": ["minor", "patch"],
@@ -29,13 +35,20 @@
             "ignoreTests": false
         },
         {
-            "matchPackageNames": ["@eslint/js", "eslint", "prettier", "typescript-eslint"],
+            "matchPackageNames": [
+                "@eslint/js",
+                "eslint",
+                "prettier",
+                "typescript-eslint",
+                "husky",
+                "lint-staged",
+                "esbuild"
+            ],
             "addLabels": ["renovate-automerge"],
             "matchUpdateTypes": ["patch"],
             "automerge": true,
             "platformAutomerge": true,
             "ignoreTests": false
         }
-    ],
-    "ignoreDeps": ["@chakra-ui/react"]
+    ]
 }
