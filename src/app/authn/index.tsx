@@ -24,7 +24,7 @@ import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/k
 import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
-const ErrorAlert = ({ title, description }: { title: ReactNode; description: ReactNode }) => (
+const ErrorAlert = ({ title, children }: { title: ReactNode; children: ReactNode }) => (
     <Alert
         severity="error"
         css={css`
@@ -32,7 +32,7 @@ const ErrorAlert = ({ title, description }: { title: ReactNode; description: Rea
         `}
     >
         <AlertTitle>{title}</AlertTitle>
-        {description}
+        {children}
     </Alert>
 )
 
@@ -57,10 +57,9 @@ const app = new Hono<Env>()
                 if (!result.success) {
                     c.status(400)
                     return c.render(
-                        <ErrorAlert
-                            title="Bad Request"
-                            description={<span>トークンが指定されませんでした。</span>}
-                        ></ErrorAlert>,
+                        <ErrorAlert title="Bad Request">
+                            トークンが指定されませんでした。
+                        </ErrorAlert>,
                     )
                 }
             },
@@ -85,23 +84,13 @@ const app = new Hono<Env>()
             })()
             if (!sessionId) {
                 c.status(400)
-                return c.render(
-                    <ErrorAlert
-                        title="Bad Request"
-                        description={<span>トークンが無効です。</span>}
-                    ></ErrorAlert>,
-                )
+                return c.render(<ErrorAlert title="Bad Request">トークンが無効です。</ErrorAlert>)
             }
             const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
             const sessionParseResult = v.safeParse($Session, rawSession)
             if (!sessionParseResult.success) {
                 c.status(400)
-                return c.render(
-                    <ErrorAlert
-                        title="Bad Request"
-                        description={<span>セッションが無効です。</span>}
-                    ></ErrorAlert>,
-                )
+                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
             }
             const session = sessionParseResult.output
             const errorContext = {
