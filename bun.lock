@@ -10,7 +10,7 @@
         "@hono/react-renderer": "^0.3.0",
         "@hono/valibot-validator": "^0.5.2",
         "@mui/icons-material": "^6.4.8",
-        "@mui/material": "^6.4.4",
+        "@mui/material": "^6.4.8",
         "crypto-browserify": "^3.12.1",
         "decode-formdata": "^0.8.0",
         "discord-api-types": "^0.37.119",
