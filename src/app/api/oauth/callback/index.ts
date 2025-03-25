@@ -19,6 +19,7 @@ import {
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, $Session, $SessionId } from "@/lib/schema/kvNamespaces"
 import { $TokenPayload } from "@/lib/schema/tokenPayload"
+import { generateSchema } from "@/lib/schema/utils"
 import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { sharedCookieNames } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
@@ -53,7 +54,8 @@ const app = new Hono<Env>().get(
         const { rest } = c.var
         const AUTHN_FAILED_MESSAGE = `:x: 認証に失敗しました。以下の点を確認し、再試行してください。
 * 学校から配付された Google アカウントでログインしていること。
-* メールアドレスとプロフィールへのアクセスを許可していること。`
+* メールアドレスとプロフィール情報へのアクセスを許可していること。
+* 正しいプロフィール情報を入力したこと。`
         const sessionId = c.req.valid("cookie").sid
         deleteCookie(c, sharedCookieNames.sessionId)
         const query = c.req.valid("query")
@@ -170,6 +172,37 @@ const app = new Hono<Env>().get(
             return c.text("Forbidden", 403)
         }
         const nadaACWorkSpaceUser = extractNadaACWorkSpaceUserFromTokenPayload(tokenPayload)
+        const userProfileValidationResult =
+            session.userProfile &&
+            v.safeParse(generateSchema(session.userProfile), nadaACWorkSpaceUser)
+        if (userProfileValidationResult?.success !== true) {
+            const errorMessage = `\`\`\`${
+                userProfileValidationResult?.issues
+                    .map(
+                        (issue) =>
+                            `${issue.message} (path: ${issue.path?.map((path) => String(path.key)).join(" > ") || "<none>"})`,
+                    )
+                    .join("\n") ?? "User bypassed the profile entry process."
+            }\`\`\``
+            await editOriginal({
+                content: AUTHN_FAILED_MESSAGE,
+                components: [],
+            })
+            await logger
+                .error({
+                    title: "Failed authentication",
+                    fields: [
+                        {
+                            name: "Reason",
+                            value: errorMessage,
+                        },
+                    ],
+                })
+                .catch(async (e: unknown) => {
+                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                })
+            return c.text("Forbidden", 403)
+        }
         if (guildConfig.nicknameFormat) {
             const nicknameFormatResult = formatNickname(
                 guildConfig.nicknameFormat,
