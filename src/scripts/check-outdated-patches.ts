@@ -1,6 +1,4 @@
 /* eslint-disable no-console */
-import type { BunLockFilePackageArray } from "bun"
-
 import packageJson from "../../package.json"
 
 const hasUncommittedChanges = await Bun.$`git status --porcelain`.text()
@@ -17,10 +15,7 @@ try {
     patchedPackageList.forEach((patchedPackage) => {
         console.write(createInitMessage(patchedPackage).padEnd(initMessageMaxLength + 3, "."))
         const [patchedPackageName, patchedPackageVersion] = patchedPackage.split("@")
-        // 実際にはundefinedになりうる
-        const bunLockFileInstalledPackage = bunLockFileInstalledPackages[patchedPackageName] as
-            | BunLockFilePackageArray
-            | undefined
+        const bunLockFileInstalledPackage = bunLockFileInstalledPackages[patchedPackageName]
         if (!bunLockFileInstalledPackage) {
             console.write("✗ Fail\n")
             throw new Error(
