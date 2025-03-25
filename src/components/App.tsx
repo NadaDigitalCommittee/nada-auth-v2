@@ -3,7 +3,10 @@ import type { ReactNode } from "react"
 
 import { AppStepper } from "./AppStepper"
 
-export const App = ({ activeStep, children }: { activeStep: number; children: ReactNode }) => (
+export const App = ({
+    activeStep,
+    children,
+}: Pick<Parameters<typeof AppStepper>[0], "activeStep"> & { children: ReactNode }) => (
     <Box
         css={css`
             display: grid;

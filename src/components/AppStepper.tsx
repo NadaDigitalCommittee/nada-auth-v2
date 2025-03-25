@@ -1,10 +1,11 @@
 import { Step, StepLabel, Stepper, Typography, css } from "@mui/material"
+import type { ArrayIndices } from "type-fest"
 
 export type AppStep = {
     name: string
     nameVerbose: string
 }
-export const appSteps: AppStep[] = [
+export const appSteps = [
     {
         name: "情報入力",
         nameVerbose: "プロフィール情報を入力",
@@ -15,13 +16,15 @@ export const appSteps: AppStep[] = [
     },
     {
         name: "アクセス許可",
+        nameVerbose: "アクセス許可",
     },
     {
         name: "完了",
+        nameVerbose: "完了",
     },
-].map((step) => ({ nameVerbose: step.name, ...step }))
+] as const satisfies AppStep[]
 
-export const AppStepper = ({ activeStep }: { activeStep: number }) => (
+export const AppStepper = ({ activeStep }: { activeStep: ArrayIndices<typeof appSteps> }) => (
     <>
         <Typography
             variant="h1"
