@@ -215,7 +215,7 @@ export const handler: CommandHandler<Env> = async (c) => {
             const subcommandName = c.sub.string.split(" ").at(-1)
             const subcommandOptionOption = (
                 options[0] as APIApplicationCommandInteractionDataSubcommandGroupOption
-            ).options[0].options?.[0]
+            ).options[0]?.options?.[0]
             const subcommandOptionOptionValue =
                 subcommandOptionOption?.value.toString().trim() ?? null
             const guildConfigKvKey = guildConfigKvKeyOf[subcommandName]
