@@ -32,13 +32,13 @@ declare global {
 
     interface ReadonlyArray {
         at<T extends ReadonlyArray<unknown>, I extends number>(this: T, index: I): At<[...T], I>
-        reverse<T extends Array<unknown>>(this: T): Reverse<[...T]>
+        reverse<T extends ReadonlyArray<unknown>>(this: T): Reverse<[...T]>
     }
 
     interface ObjectConstructor {
-        entries<T extends Record<PropertyKey, unknown> | ArrayLike<unknown>>(o: T): Entries<T>
-        fromEntries<T extends Array<readonly [PropertyKey, unknown]>>(entries: T): FromEntries<T>
-        keys<T>(o: T): (keyof T)[]
+        entries<const T extends Record<PropertyKey, unknown>>(o: T): Entries<T>
+        fromEntries<const T extends Array<[PropertyKey, unknown]>>(entries: T): FromEntries<T>
+        keys<const T>(o: T): `${Exclude<keyof T, symbol>}`[]
     }
 
     interface ImportMeta {

@@ -1,6 +1,8 @@
 import type { TokenPayload } from "google-auth-library"
 import type { SetRequired } from "type-fest"
 
+import { getJstAcademicYear } from "./date"
+
 import {
     type CombinedGrade,
     type Grade,
@@ -8,6 +10,14 @@ import {
     type NadaAcWorkSpaceUser,
     NadaAcWorkSpaceUserType,
 } from "@/lib/types/nadaAc"
+
+export const OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT = 1941
+export const GRADE_SPAN = 3
+
+export const calcCohortFromCombinedGrade = (
+    combinedGrade: CombinedGrade,
+    jstAcademicYear: number,
+) => jstAcademicYear - OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT - combinedGrade
 
 // TODO: クラスにしてformatNicknameをメソッドに組み込む
 export const extractNadaACWorkSpaceUserFromTokenPayload = (
@@ -34,20 +44,10 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
             },
         }
     }
-    const ACADEMIC_YEAR_FIRST_MONTH = 3 // 4 - 1
-    const OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT = 1941
-    const GRADE_SPAN = 3
-    const UtcIssuedAt = new Date(tokenPayload.iat * 1000)
-    const JstIssuedAt = new Date(UtcIssuedAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }))
-    const JstIssuedYear = JstIssuedAt.getFullYear()
-    const JstIssuedMonth = JstIssuedAt.getMonth()
-    const JstIssuedAcademicYear = JstIssuedYear - +(JstIssuedMonth < ACADEMIC_YEAR_FIRST_MONTH)
+    const jstIssuedAcademicYear = getJstAcademicYear(new Date(tokenPayload.iat * 1000))
     const userCombinedGrade = +userProfileSource.combinedGrade as CombinedGrade
     const userGrade = -~(~-userCombinedGrade % GRADE_SPAN) as Grade
-    const userCohort =
-        JstIssuedAcademicYear -
-        OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT -
-        userCombinedGrade
+    const userCohort = calcCohortFromCombinedGrade(userCombinedGrade, jstIssuedAcademicYear)
     const userStudentType =
         userCombinedGrade > GRADE_SPAN
             ? NadaAcWorkSpaceStudentType.Senior
