@@ -18,7 +18,7 @@ export const $Session = v.object({
     guildId: $Snowflake,
     user: $APIUser,
     interactionToken: v.string(),
-    expectedWorkspaceUser: v.optional($NadaAcWorkSpacePartialUser),
+    userProfile: v.optional($NadaAcWorkSpacePartialUser),
     state: v.optional(v.string()),
     nonce: v.optional(v.string()),
 })
