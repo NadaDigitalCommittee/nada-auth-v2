@@ -33,7 +33,7 @@ const app = new Hono<Env>().get(
             v.object({
                 state: v.string(),
                 code: v.string(),
-                error: v.undefined(),
+                error: v.optional(v.undefined()),
             }),
             v.object({
                 state: v.string(),
