@@ -23,8 +23,10 @@
     "dependencies": {
         "@discordjs/rest": "^2.4.3",
         "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.0",
         "@hono/react-renderer": "^0.3.0",
         "@hono/valibot-validator": "^0.5.2",
+        "@mui/icons-material": "^6.4.8",
         "@mui/material": "^6.4.4",
         "crypto-browserify": "^3.12.1",
         "decode-formdata": "^0.8.0",
