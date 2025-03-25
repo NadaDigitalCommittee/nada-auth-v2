@@ -1,8 +1,6 @@
 import type { TokenPayload } from "google-auth-library"
 import * as v from "valibot"
 
-import { id } from "../utils/fp"
-
 export const $TokenPayload = v.object({
     /**
      * The Issuer Identifier for the Issuer of the response. Always
@@ -112,9 +110,4 @@ export const $TokenPayload = v.object({
      * Might be provided when a name claim is present.
      */
     locale: v.optional(v.string()),
-})
-
-// https://valibot.dev/api/required/
-// pipeせず、型チェックのみ
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const $_ = v.pipe($TokenPayload, v.transform(id<TokenPayload>))
+}) satisfies v.GenericSchema<TokenPayload>
