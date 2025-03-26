@@ -17,28 +17,18 @@ import type { Context } from "hono"
 import type { Env } from "../schema/env"
 import type { InteractionsNSPath } from "./structure"
 
-type PrettifyOptionValueArgsTypeBase =
-    | [string, "String" | "Role" | "User"]
-    | [string, "Channel"]
-    // | [string, "Mentionable"] // 未実装
-    | [number, "Integer" | "Number"]
-    | [boolean, "Boolean"]
-type BuildPrettifyOptionValueArgsType<T extends PrettifyOptionValueArgsTypeBase> = T extends [
-    infer V0,
-    infer V1 extends keyof typeof ApplicationCommandOptionType,
-]
-    ? [V0 | null, (typeof ApplicationCommandOptionType)[V1], { defaultValue?: string }?]
-    : never
-
 /**
  * @package
  */
-export const prettifyOptionValue = (
-    ...[
-        optionValue,
-        optionValueType,
-        additionalData,
-    ]: BuildPrettifyOptionValueArgsType<PrettifyOptionValueArgsTypeBase>
+export const prettifyOptionValue = <
+    T extends Exclude<
+        APIApplicationCommandInteractionDataBasicOption["type"],
+        ApplicationCommandOptionType.Attachment | ApplicationCommandOptionType.Mentionable
+    >,
+>(
+    optionValue: CommandInteractionDataBasicOptionTypeToOptionValueType<T> | undefined,
+    optionValueType: T,
+    additionalData?: { defaultValue?: string },
 ): string => {
     if (optionValue == null) return additionalData?.defaultValue ?? "null"
     switch (optionValueType) {
