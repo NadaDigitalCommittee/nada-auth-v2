@@ -11,6 +11,7 @@ run_worker_first = true
 [define]
 "import.meta.env.DEV" = "false"
 "import.meta.env.PROD" = "true"
+"ReadonlyMap" = "Map"
 
 [[kv_namespaces]]
 binding = "GuildConfigs"
@@ -27,6 +28,7 @@ id = "8d9392625ca04727a87a5ddf09a2b459"
 [env.dev.define]
 "import.meta.env.DEV" = "true"
 "import.meta.env.PROD" = "false"
+"ReadonlyMap" = "Map"
 
 [[env.dev.kv_namespaces]]
 binding = "GuildConfigs"
