@@ -33,6 +33,7 @@
         "discord-api-types": "^0.37.119",
         "discord-hono": "^0.16.4",
         "google-auth-library": "^9.15.1",
+        "googleapis": "^148.0.0",
         "hono": "^4.7.5",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
