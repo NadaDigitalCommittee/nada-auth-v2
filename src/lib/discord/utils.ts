@@ -1,5 +1,6 @@
 import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
 import {
+    type APIApplicationCommandInteractionDataBasicOption,
     type APIEmbed,
     type APIGuildMember,
     type APIUser,
@@ -183,3 +184,7 @@ export class Logger {
         await this.log(LogLevel.info, embed)
     }
 }
+
+export type CommandInteractionDataBasicOptionTypeToOptionValueType<
+    T extends APIApplicationCommandInteractionDataBasicOption["type"],
+> = Extract<APIApplicationCommandInteractionDataBasicOption, { type: T }>["value"]
