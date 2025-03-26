@@ -15,16 +15,18 @@ export const sessionExpirationTtl = 300
 
 export const sessionExpirationTtlDev = 86400
 
-export const guildConfigKvKeyOf = {
-    "authenticated-role": "authenticatedRoleId",
-    nickname: "nicknameFormat",
-    "logging-channel": "loggingChannelId",
-} as const satisfies Record<string, keyof GuildConfig>
-
-export const configSetOptionNameOf = Object.fromEntries(
-    Object.entries(guildConfigKvKeyOf).map((pair) => pair.reverse()),
+const guildConfigOptionMapBase = [
+    ["authenticated-role", "authenticatedRoleId"],
+    ["nickname", "nicknameFormat"],
+    ["logging-channel", "loggingChannelId"],
+] as const satisfies [string, keyof GuildConfig][]
+export const guildConfigOptionNameToKvKeyMap = new ReadonlyMap(guildConfigOptionMapBase)
+export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
+    guildConfigOptionMapBase.map(([p0, p1]) => [p1, p0]),
 )
 
-export const guildConfigInit = Object.fromEntries(
-    Object.values(guildConfigKvKeyOf).map((kvKey) => [kvKey, null]),
-)
+export const guildConfigInit = {
+    authenticatedRoleId: null,
+    nicknameFormat: null,
+    loggingChannelId: null,
+} satisfies GuildConfig

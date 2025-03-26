@@ -25,11 +25,16 @@ import {
 import { type CommandHandler, Embed } from "discord-hono"
 import * as v from "valibot"
 
-import { configSetOptionNameOf, guildConfigInit, guildConfigKvKeyOf } from "../constants"
+import {
+    guildConfigInit,
+    guildConfigKvKeyToOptionNameMap,
+    guildConfigOptionNameToKvKeyMap,
+} from "../constants"
 import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type GuildConfig } from "@/lib/schema/kvNamespaces"
+import type { MapKeyOf } from "@/lib/types/utils/map"
 import { valuesToBitmask } from "@/lib/utils/boolTupleToBitmask"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
@@ -77,7 +82,7 @@ const configSetOptions = [
     },
 ] as const satisfies Array<
     APIApplicationCommandSubcommandOption & {
-        name: keyof typeof guildConfigKvKeyOf
+        name: MapKeyOf<typeof guildConfigOptionNameToKvKeyMap>
         options: [{ name: "value"; required: false } & APIApplicationCommandBasicOption]
     }
 >
@@ -125,7 +130,7 @@ type PickOptionNameAndOptionValueType<T> = T extends {
     ? [TOptionName, TOptionValueType]
     : never
 
-const configSetOptionValueTypeOf = Object.fromEntries(
+const guildConfigOptionNameToOptionTypeMap = new ReadonlyMap(
     configSetOptions.map(
         (subcommandOption) =>
             [
@@ -143,8 +148,8 @@ const generateConfigTableEmbed = (config: GuildConfig) =>
             ): entry is [`_${string}`, unknown] => entry[0].startsWith("_")
             if (!isInternalConfigEntry(cur)) {
                 const [configKvKey, optionValue] = cur
-                const optionName = configSetOptionNameOf[configKvKey]
-                const optionValueType = configSetOptionValueTypeOf[optionName]
+                const optionName = guildConfigKvKeyToOptionNameMap.get(configKvKey)
+                const optionValueType = guildConfigOptionNameToOptionTypeMap.get(optionName)
                 acc.push({
                     name: optionName,
                     value: prettifyOptionValue(optionValue, optionValueType, {
@@ -217,7 +222,7 @@ export const handler: CommandHandler<Env> = async (c) => {
             ).options[0]?.options?.[0]
             const subcommandOptionOptionValue =
                 subcommandOptionOption?.value.toString().trim() ?? null
-            const guildConfigKvKey = guildConfigKvKeyOf[subcommandName]
+            const guildConfigKvKey = guildConfigOptionNameToKvKeyMap.get(subcommandName)
             {
                 // NOTE: バリデーション用スコープ
                 const authenticatedRoleValueIsEveryone =
