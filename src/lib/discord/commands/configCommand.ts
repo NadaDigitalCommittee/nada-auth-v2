@@ -85,6 +85,19 @@ const configSetOptions = [
             },
         ],
     },
+    {
+        name: "strict",
+        description: "厳格モード",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+            {
+                name: "value",
+                description: "厳格モードを有効にする（既定値: False）",
+                type: ApplicationCommandOptionType.Boolean,
+                required: false,
+            },
+        ],
+    },
 ] as const satisfies Array<
     APIApplicationCommandSubcommandOption & {
         name: MapKeyOf<typeof guildConfigOptionNameToKvKeyMap>
@@ -226,7 +239,8 @@ export const handler: CommandHandler<Env> = async (c) => {
             return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
         case "set authenticated-role":
         case "set logging-channel":
-        case "set nickname": {
+        case "set nickname":
+        case "set strict": {
             const subcommandName = c.sub.string.split(" ").at(-1)
             const subcommandOptionOption = (
                 options[0] as APIApplicationCommandInteractionDataSubcommandGroupOption

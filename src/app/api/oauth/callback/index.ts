@@ -176,7 +176,7 @@ const app = new Hono<Env>().get(
             session.userProfile &&
             v.safeParse(generateSchema(session.userProfile), nadaACWorkSpaceUser)
         if (userProfileValidationResult?.success !== true) {
-            const errorMessage = `\`\`\`${
+            const logMessage = `\`\`\`${
                 userProfileValidationResult?.issues
                     .map(
                         (issue) =>
@@ -184,24 +184,44 @@ const app = new Hono<Env>().get(
                     )
                     .join("\n") ?? "User bypassed the profile entry process."
             }\`\`\``
-            await editOriginal({
-                content: AUTHN_FAILED_MESSAGE,
-                components: [],
-            })
-            await logger
-                .error({
-                    title: "Failed authentication",
-                    fields: [
-                        {
-                            name: "Reason",
-                            value: errorMessage,
-                        },
-                    ],
+            if (guildConfig.strictIntegrityCheck === true) {
+                await editOriginal({
+                    content: AUTHN_FAILED_MESSAGE,
+                    components: [],
                 })
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                })
-            return c.text("Forbidden", 403)
+                await logger
+                    .error({
+                        title: "Failed authentication",
+                        fields: [
+                            {
+                                name: "Reason",
+                                value: "Profile Information Mismatch",
+                            },
+                            {
+                                name: "Details",
+                                value: logMessage,
+                            },
+                        ],
+                    })
+                    .catch(async (e: unknown) => {
+                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                    })
+                return c.text("Forbidden", 403)
+            } else {
+                await logger
+                    .warn({
+                        title: "Warnings while authentication",
+                        fields: [
+                            {
+                                name: "Details",
+                                value: logMessage,
+                            },
+                        ],
+                    })
+                    .catch(async (e: unknown) => {
+                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                    })
+            }
         }
         if (guildConfig.nicknameFormat) {
             const nicknameFormatResult = formatNickname(

@@ -8,6 +8,7 @@ export const $GuildConfig = v.object({
     authenticatedRoleId: v.optional($Snowflake),
     nicknameFormat: v.optional(v.string()),
     loggingChannelId: v.optional($Snowflake),
+    strictIntegrityCheck: v.optional(v.boolean()),
     _loggingWebhook: v.optional($APIWebhook),
     _signInButtonWebhook: v.optional($APIWebhook),
 })
