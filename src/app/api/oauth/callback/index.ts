@@ -232,9 +232,14 @@ const app = new Hono<Env>().get(
                 await logger
                     .warn({
                         title: "Warnings while formatting nickname",
-                        description: `\`\`\`\n${nicknameFormatResult.warnings
-                            .map((w) => w.stack)
-                            .join("\n")}\`\`\``,
+                        fields: [
+                            {
+                                name: "Details",
+                                value: `\`\`\`\n${nicknameFormatResult.warnings
+                                    .map((w) => w.stack)
+                                    .join("\n")}\`\`\``,
+                            },
+                        ],
                     })
                     .catch(async (e: unknown) => {
                         if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
