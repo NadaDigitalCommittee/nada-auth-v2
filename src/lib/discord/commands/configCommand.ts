@@ -332,10 +332,9 @@ export const handler: CommandHandler<Env> = async (c) => {
             }
             await guildConfigRecord.put(
                 guildId,
-                JSON.stringify({
-                    ...guildConfig,
-                    [guildConfigKvKey]: subcommandOptionOptionValue,
-                } satisfies GuildConfig),
+                JSON.stringify(
+                    Object.assign(guildConfig, { [guildConfigKvKey]: subcommandOptionOptionValue }),
+                ),
             )
             return c.res({
                 content: ":white_check_mark: サーバー設定が更新されました。",
