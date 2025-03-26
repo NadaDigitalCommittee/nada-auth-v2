@@ -26,7 +26,7 @@ export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
 )
 
 export const guildConfigInit = {
-    authenticatedRoleId: null,
-    nicknameFormat: null,
-    loggingChannelId: null,
+    authenticatedRoleId: undefined,
+    nicknameFormat: undefined,
+    loggingChannelId: undefined,
 } satisfies GuildConfig

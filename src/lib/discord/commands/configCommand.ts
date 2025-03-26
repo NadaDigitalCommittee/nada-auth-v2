@@ -153,7 +153,7 @@ type GuildConfigOptionNameToOptionValueType<T extends ConfigSetOption["name"]> =
 
 const generateConfigTableEmbed = (config: GuildConfig) =>
     new Embed().fields(
-        ...Object.entries(config).reduce((acc, cur) => {
+        ...Object.entries({ ...guildConfigInit, ...config }).reduce((acc, cur) => {
             const isInternalConfigEntry = (
                 entry: [string, unknown],
             ): entry is [`_${string}`, unknown] => entry[0].startsWith("_")
