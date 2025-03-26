@@ -7,7 +7,6 @@ import {
 } from "discord-api-types/v10"
 import { type Button, type ComponentHandler, Components } from "discord-hono"
 import { hc } from "hono/client"
-import type { ValueOf } from "type-fest"
 import * as v from "valibot"
 
 import {
@@ -20,7 +19,7 @@ import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { AppType } from "@/app"
 import type { Env } from "@/lib/schema/env"
-import { $GuildConfig, type SessionRecord } from "@/lib/schema/kvNamespaces"
+import { $GuildConfig, type Session } from "@/lib/schema/kvNamespaces"
 import { shouldBeError } from "@/lib/utils/exceptions"
 import { generateSecret } from "@/lib/utils/secret"
 
@@ -87,7 +86,7 @@ export const handler: ComponentHandler<Env, Button> = async (c) => {
         )
     const authNRequestToken = generateSecret(64)
     const sessionId = generateSecret(64)
-    const session: ValueOf<SessionRecord> = { guildId, user, interactionToken }
+    const session: Session = { guildId, user, interactionToken }
     await authNRequestRecord.put(`userId:${user.id}`, sessionId, {
         expirationTtl: sessionExpirationTtl,
     })

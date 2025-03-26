@@ -44,6 +44,24 @@ declare global {
     interface ImportMeta {
         env: NodeJS.ProcessEnv & (DevEnv | ProdEnv)
     }
+
+    interface ReadonlyMap<K, V> {
+        get(key: K): V
+    }
+
+    // es2015.collection
+    interface ReadonlyMapConstructor extends MapConstructor {
+        new (): ReadonlyMap<unknown, unknown>
+        new <K, V>(entries?: readonly (readonly [K, V])[] | null): ReadonlyMap<K, V>
+        readonly prototype: ReadonlyMap<unknown, unknown>
+    }
+
+    // es2015.iterable
+    interface ReadonlyMapConstructor {
+        new (): ReadonlyMap<unknown, unknown>
+        new <K, V>(iterable?: Iterable<readonly [K, V]> | null): ReadonlyMap<K, V>
+    }
+    declare const ReadonlyMap: ReadonlyMapConstructor
 }
 
 export {}

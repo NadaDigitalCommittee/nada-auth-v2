@@ -5,13 +5,15 @@ import { $NadaAcWorkSpacePartialUser } from "./nadaAc"
 
 export const $GuildId = $Snowflake
 export const $GuildConfig = v.object({
-    authenticatedRoleId: v.nullable($Snowflake),
-    nicknameFormat: v.nullable(v.string()),
-    loggingChannelId: v.nullable($Snowflake),
+    authenticatedRoleId: v.optional($Snowflake),
+    nicknameFormat: v.optional(v.string()),
+    loggingChannelId: v.optional($Snowflake),
+    strictIntegrityCheck: v.optional(v.boolean()),
     _loggingWebhook: v.optional($APIWebhook),
     _signInButtonWebhook: v.optional($APIWebhook),
 })
 export const $GuildConfigRecord = v.record($GuildId, $GuildConfig)
+export type GuildConfig = v.InferOutput<typeof $GuildConfig>
 export type GuildConfigRecord = v.InferOutput<typeof $GuildConfigRecord>
 
 export const $Session = v.object({
@@ -24,19 +26,19 @@ export const $Session = v.object({
 })
 export const $SessionId = v.string()
 export const $SessionRecord = v.record($SessionId, $Session)
+export type Session = v.InferOutput<typeof $Session>
 export type SessionRecord = v.InferOutput<typeof $SessionRecord>
 const AuthNRequestKeyPrefixes = ["userId", "requestToken"] as const satisfies string[]
 export const $RequestToken = v.pipe(v.string(), v.nonEmpty())
-export const $AuthNRequestRecord = v.record(
-    v.union(
-        AuthNRequestKeyPrefixes.map((keyPrefix) =>
-            v.custom<`${typeof keyPrefix}:${string}`>(
-                (input) => typeof input === "string" && new RegExp(`^${keyPrefix}:.+$`).test(input),
-            ),
+export const $AuthNRequest = v.union(
+    AuthNRequestKeyPrefixes.map((keyPrefix) =>
+        v.custom<`${typeof keyPrefix}:${string}`>(
+            (input) => typeof input === "string" && new RegExp(`^${keyPrefix}:.+$`).test(input),
         ),
     ),
-    $SessionId,
 )
+export const $AuthNRequestRecord = v.record($AuthNRequest, $SessionId)
+export type AuthNRequest = v.InferOutput<typeof $AuthNRequest>
 export type AuthNRequestRecord = v.InferOutput<typeof $AuthNRequestRecord>
 
 /* eslint-disable @typescript-eslint/no-unnecessary-type-arguments */

@@ -23,15 +23,24 @@ import {
     Routes,
 } from "discord-api-types/v10"
 import { type CommandHandler, Embed } from "discord-hono"
-import type { ValueOf } from "type-fest"
+import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
-import { configSetOptionNameOf, guildConfigInit, guildConfigKvKeyOf } from "../constants"
-import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "../utils"
+import {
+    guildConfigInit,
+    guildConfigKvKeyToOptionNameMap,
+    guildConfigOptionNameToKvKeyMap,
+} from "../constants"
+import {
+    type CommandInteractionDataBasicOptionTypeToOptionValueType,
+    type ErrorContext,
+    prettifyOptionValue,
+    reportErrorWithContext,
+} from "../utils"
 
 import type { Env } from "@/lib/schema/env"
-import { $GuildConfig, type GuildConfigRecord } from "@/lib/schema/kvNamespaces"
-import { valuesToBitmask } from "@/lib/utils/boolTupleToBitmask"
+import { $GuildConfig, type GuildConfig } from "@/lib/schema/kvNamespaces"
+import type { MapKeyOf } from "@/lib/types/utils/map"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
 const configSetOptions = [
@@ -76,12 +85,27 @@ const configSetOptions = [
             },
         ],
     },
+    {
+        name: "strict",
+        description: "厳格モード",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+            {
+                name: "value",
+                description: "厳格モードを有効にする（既定値: False）",
+                type: ApplicationCommandOptionType.Boolean,
+                required: false,
+            },
+        ],
+    },
 ] as const satisfies Array<
     APIApplicationCommandSubcommandOption & {
-        name: keyof typeof guildConfigKvKeyOf
+        name: MapKeyOf<typeof guildConfigOptionNameToKvKeyMap>
         options: [{ name: "value"; required: false } & APIApplicationCommandBasicOption]
     }
 >
+
+type ConfigSetOption = ArrayValues<typeof configSetOptions>
 
 /**
  * @package
@@ -126,7 +150,7 @@ type PickOptionNameAndOptionValueType<T> = T extends {
     ? [TOptionName, TOptionValueType]
     : never
 
-const configSetOptionValueTypeOf = Object.fromEntries(
+const guildConfigOptionNameToOptionTypeMap = new ReadonlyMap(
     configSetOptions.map(
         (subcommandOption) =>
             [
@@ -135,17 +159,21 @@ const configSetOptionValueTypeOf = Object.fromEntries(
             ] as PickOptionNameAndOptionValueType<typeof subcommandOption>,
     ),
 )
+type GuildConfigOptionNameToOptionValueType<T extends ConfigSetOption["name"]> =
+    CommandInteractionDataBasicOptionTypeToOptionValueType<
+        Extract<ConfigSetOption, { name: T }>["options"][0]["type"]
+    >
 
-const generateConfigTableEmbed = (config: ValueOf<GuildConfigRecord>) =>
+const generateConfigTableEmbed = (config: GuildConfig) =>
     new Embed().fields(
-        ...Object.entries(config).reduce((acc, cur) => {
+        ...Object.entries({ ...guildConfigInit, ...config }).reduce((acc, cur) => {
             const isInternalConfigEntry = (
                 entry: [string, unknown],
             ): entry is [`_${string}`, unknown] => entry[0].startsWith("_")
             if (!isInternalConfigEntry(cur)) {
                 const [configKvKey, optionValue] = cur
-                const optionName = configSetOptionNameOf[configKvKey]
-                const optionValueType = configSetOptionValueTypeOf[optionName]
+                const optionName = guildConfigKvKeyToOptionNameMap.get(configKvKey)
+                const optionValueType = guildConfigOptionNameToOptionTypeMap.get(optionName)
                 acc.push({
                     name: optionName,
                     value: prettifyOptionValue(optionValue, optionValueType, {
@@ -211,14 +239,14 @@ export const handler: CommandHandler<Env> = async (c) => {
             return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
         case "set authenticated-role":
         case "set logging-channel":
-        case "set nickname": {
+        case "set nickname":
+        case "set strict": {
             const subcommandName = c.sub.string.split(" ").at(-1)
             const subcommandOptionOption = (
                 options[0] as APIApplicationCommandInteractionDataSubcommandGroupOption
             ).options[0]?.options?.[0]
-            const subcommandOptionOptionValue =
-                subcommandOptionOption?.value.toString().trim() ?? null
-            const guildConfigKvKey = guildConfigKvKeyOf[subcommandName]
+            const subcommandOptionOptionValue = subcommandOptionOption?.value
+            const guildConfigKvKey = guildConfigOptionNameToKvKeyMap.get(subcommandName)
             {
                 // NOTE: バリデーション用スコープ
                 const authenticatedRoleValueIsEveryone =
@@ -235,88 +263,80 @@ export const handler: CommandHandler<Env> = async (c) => {
                     embeds: [generateConfigTableEmbed(guildConfig)],
                 })
             }
+            const isPresent = (val: unknown) => val !== undefined
             if (subcommandName === "logging-channel") {
-                const { bitmask, bindings } = valuesToBitmask(
-                    guildConfig._loggingWebhook,
-                    subcommandOptionOptionValue,
-                )
-                switch (bitmask) {
-                    case 0b11: {
-                        // すでに Webhook が作成されていて、別のチャンネルに変更される場合
-                        const [loggingWebhook, channelOptionValue] = bindings
-                        const webhookModificationResult = (await rest
-                            .patch(Routes.webhook(loggingWebhook.id), {
-                                body: {
-                                    channel_id: channelOptionValue,
-                                } satisfies RESTPatchAPIWebhookJSONBody,
-                            })
-                            .catch(shouldBeError)) as
-                            | RESTPatchAPIWebhookResult
-                            | DiscordAPIError
-                            | TypeError
-                        if (webhookModificationResult instanceof Error) {
-                            await reportErrorWithContext(
-                                webhookModificationResult,
-                                errorContext,
-                                c.env,
-                            )
-                            return c.res(
-                                `:x: Webhook <@${loggingWebhook.id}> を更新できませんでした。\n理由: \n>>> ${webhookModificationResult.message}`,
-                            )
-                        }
-                        guildConfig._loggingWebhook = webhookModificationResult
-                        break
+                const loggingWebhook = guildConfig._loggingWebhook
+                const channelOptionValue =
+                    subcommandOptionOptionValue as GuildConfigOptionNameToOptionValueType<
+                        typeof subcommandName
+                    >
+                if (isPresent(loggingWebhook) && isPresent(channelOptionValue)) {
+                    // すでに Webhook が作成されていて、別のチャンネルに変更される場合
+                    const webhookModificationResult = (await rest
+                        .patch(Routes.webhook(loggingWebhook.id), {
+                            body: {
+                                channel_id: channelOptionValue,
+                            } satisfies RESTPatchAPIWebhookJSONBody,
+                        })
+                        .catch(shouldBeError)) as
+                        | RESTPatchAPIWebhookResult
+                        | DiscordAPIError
+                        | TypeError
+                    if (webhookModificationResult instanceof Error) {
+                        await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
+                        return c.res(
+                            `:x: Webhook <@${loggingWebhook.id}> を更新できませんでした。\n理由: \n>>> ${webhookModificationResult.message}`,
+                        )
                     }
-                    case 0b10: {
-                        // すでに webhook が作成されていて、それを削除する場合
-                        const [loggingWebhook] = bindings
-                        const webhookDeletionResult = (await rest
-                            .delete(Routes.webhook(loggingWebhook.id))
-                            .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-                            | RESTDeleteAPIWebhookResult
-                            | DiscordAPIError
-                            | TypeError
-                        if (webhookDeletionResult instanceof Error) {
-                            await reportErrorWithContext(webhookDeletionResult, errorContext, c.env)
-                            return c.res(
-                                `:x: Webhook <@${loggingWebhook.id}> を削除できませんでした。\n理由: \n>>> ${webhookDeletionResult.message}`,
-                            )
-                        }
-                        delete guildConfig._loggingWebhook
-                        break
+                    guildConfig._loggingWebhook = webhookModificationResult
+                } else if (isPresent(loggingWebhook) && !isPresent(channelOptionValue)) {
+                    // すでに webhook が作成されていて、それを削除する場合
+                    const webhookDeletionResult = (await rest
+                        .delete(Routes.webhook(loggingWebhook.id))
+                        .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+                        | RESTDeleteAPIWebhookResult
+                        | DiscordAPIError
+                        | TypeError
+                    if (webhookDeletionResult instanceof Error) {
+                        await reportErrorWithContext(webhookDeletionResult, errorContext, c.env)
+                        return c.res(
+                            `:x: Webhook <@${loggingWebhook.id}> を削除できませんでした。\n理由: \n>>> ${webhookDeletionResult.message}`,
+                        )
                     }
-                    case 0b01: {
-                        // webhook がまだ作成されておらず、新たに作る場合
-                        const [, channelOptionValue] = bindings
-                        const webhookCreationResult = (await rest
-                            .post(Routes.channelWebhooks(channelOptionValue), {
-                                body: {
-                                    name: "nada-auth logging",
-                                } satisfies RESTPostAPIChannelWebhookJSONBody,
-                            })
-                            .catch(shouldBeError)) as
-                            | RESTPostAPIChannelWebhookResult
-                            | DiscordAPIError
-                            | TypeError
-                        if (webhookCreationResult instanceof Error) {
-                            await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
-                            return c.res(
-                                `:x: チャンネル <#${channelOptionValue}> に Webhook を作成できませんでした。\n理由: \n>>> ${webhookCreationResult.message}`,
-                            )
-                        }
-                        guildConfig._loggingWebhook = webhookCreationResult
-                        break
+                    delete guildConfig._loggingWebhook
+                } else if (!isPresent(loggingWebhook) && isPresent(channelOptionValue)) {
+                    // webhook がまだ作成されておらず、新たに作る場合
+                    const webhookCreationResult = (await rest
+                        .post(Routes.channelWebhooks(channelOptionValue), {
+                            body: {
+                                name: "nada-auth logging",
+                            } satisfies RESTPostAPIChannelWebhookJSONBody,
+                        })
+                        .catch(shouldBeError)) as
+                        | RESTPostAPIChannelWebhookResult
+                        | DiscordAPIError
+                        | TypeError
+                    if (webhookCreationResult instanceof Error) {
+                        await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
+                        return c.res(
+                            `:x: チャンネル <#${channelOptionValue}> に Webhook を作成できませんでした。\n理由: \n>>> ${webhookCreationResult.message}`,
+                        )
                     }
-                    case 0b00:
-                        // webhook がないがチャンネルの設定が存在し、それを削除しようとしている場合
-                        // guildConfig[guildConfigKvKey] === subcommandOptionOptionValue
-                        // を弾いているので、KVを直接触らない限りありえない？
-                        // この switch の次の処理で logginChannelId は削除されるので、何もしない
-                        break
+                    guildConfig._loggingWebhook = webhookCreationResult
+                } else {
+                    // webhook がないがチャンネルの設定が存在し、それを削除しようとしている場合
+                    // guildConfig[guildConfigKvKey] === subcommandOptionOptionValue
+                    // を弾いているので、KVを直接触らない限りありえない？
+                    // この次の処理で loggingChannelId は削除されるので、何もしない
                 }
             }
-            guildConfig[guildConfigKvKey] = subcommandOptionOptionValue
-            await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
+            await guildConfigRecord.put(
+                guildId,
+                JSON.stringify({
+                    ...guildConfig,
+                    [guildConfigKvKey]: subcommandOptionOptionValue,
+                } satisfies GuildConfig),
+            )
             return c.res({
                 content: ":white_check_mark: サーバー設定が更新されました。",
                 embeds: [generateConfigTableEmbed(guildConfig)],

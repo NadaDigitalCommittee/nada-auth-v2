@@ -12,7 +12,6 @@ import { Hono } from "hono"
 import { hc } from "hono/client"
 import { getCookie, setCookie } from "hono/cookie"
 import type { ReactNode } from "react"
-import type { ValueOf } from "type-fest"
 import * as v from "valibot"
 
 import type { AppType } from "@/app"
@@ -26,7 +25,7 @@ import {
     $RequestToken,
     $Session,
     type AuthNRequestRecord,
-    type SessionRecord,
+    type Session,
 } from "@/lib/schema/kvNamespaces"
 import { $NadaAcWorkSpacePartialUser } from "@/lib/schema/nadaAc"
 import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
@@ -128,7 +127,7 @@ const app = new Hono<Env>()
         const session = sessionParseResult.output
         await sessionRecord.put(
             sessionId,
-            JSON.stringify({ ...session, userProfile } satisfies ValueOf<SessionRecord>),
+            JSON.stringify({ ...session, userProfile } satisfies Session),
         )
         const errorContext = {
             guildId: session.guildId,

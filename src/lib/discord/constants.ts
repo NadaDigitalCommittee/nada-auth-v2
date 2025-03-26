@@ -1,6 +1,4 @@
-import type { ValueOf } from "type-fest"
-
-import type { GuildConfigRecord } from "@/lib/schema/kvNamespaces"
+import type { GuildConfig } from "@/lib/schema/kvNamespaces"
 
 export const DISCORD_WEBHOOK_NAME_MAX_LENGTH = 80
 
@@ -17,16 +15,20 @@ export const sessionExpirationTtl = 300
 
 export const sessionExpirationTtlDev = 86400
 
-export const guildConfigKvKeyOf = {
-    "authenticated-role": "authenticatedRoleId",
-    nickname: "nicknameFormat",
-    "logging-channel": "loggingChannelId",
-} as const satisfies Record<string, keyof ValueOf<GuildConfigRecord>>
-
-export const configSetOptionNameOf = Object.fromEntries(
-    Object.entries(guildConfigKvKeyOf).map((pair) => pair.reverse()),
+const guildConfigOptionMapBase = [
+    ["authenticated-role", "authenticatedRoleId"],
+    ["nickname", "nicknameFormat"],
+    ["logging-channel", "loggingChannelId"],
+    ["strict", "strictIntegrityCheck"],
+] as const satisfies [string, keyof GuildConfig][]
+export const guildConfigOptionNameToKvKeyMap = new ReadonlyMap(guildConfigOptionMapBase)
+export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
+    guildConfigOptionMapBase.map(([p0, p1]) => [p1, p0]),
 )
 
-export const guildConfigInit = Object.fromEntries(
-    Object.values(guildConfigKvKeyOf).map((kvKey) => [kvKey, null]),
-)
+export const guildConfigInit = {
+    authenticatedRoleId: undefined,
+    nicknameFormat: undefined,
+    loggingChannelId: undefined,
+    strictIntegrityCheck: false,
+} satisfies GuildConfig
