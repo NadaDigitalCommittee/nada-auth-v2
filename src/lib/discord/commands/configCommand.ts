@@ -23,14 +23,13 @@ import {
     Routes,
 } from "discord-api-types/v10"
 import { type CommandHandler, Embed } from "discord-hono"
-import type { ValueOf } from "type-fest"
 import * as v from "valibot"
 
 import { configSetOptionNameOf, guildConfigInit, guildConfigKvKeyOf } from "../constants"
 import { type ErrorContext, prettifyOptionValue, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
-import { $GuildConfig, type GuildConfigRecord } from "@/lib/schema/kvNamespaces"
+import { $GuildConfig, type GuildConfig } from "@/lib/schema/kvNamespaces"
 import { valuesToBitmask } from "@/lib/utils/boolTupleToBitmask"
 import { shouldBeError } from "@/lib/utils/exceptions"
 
@@ -136,7 +135,7 @@ const configSetOptionValueTypeOf = Object.fromEntries(
     ),
 )
 
-const generateConfigTableEmbed = (config: ValueOf<GuildConfigRecord>) =>
+const generateConfigTableEmbed = (config: GuildConfig) =>
     new Embed().fields(
         ...Object.entries(config).reduce((acc, cur) => {
             const isInternalConfigEntry = (

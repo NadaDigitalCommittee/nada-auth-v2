@@ -1,6 +1,4 @@
-import type { ValueOf } from "type-fest"
-
-import type { GuildConfigRecord } from "@/lib/schema/kvNamespaces"
+import type { GuildConfig } from "@/lib/schema/kvNamespaces"
 
 export const DISCORD_WEBHOOK_NAME_MAX_LENGTH = 80
 
@@ -21,7 +19,7 @@ export const guildConfigKvKeyOf = {
     "authenticated-role": "authenticatedRoleId",
     nickname: "nicknameFormat",
     "logging-channel": "loggingChannelId",
-} as const satisfies Record<string, keyof ValueOf<GuildConfigRecord>>
+} as const satisfies Record<string, keyof GuildConfig>
 
 export const configSetOptionNameOf = Object.fromEntries(
     Object.entries(guildConfigKvKeyOf).map((pair) => pair.reverse()),
