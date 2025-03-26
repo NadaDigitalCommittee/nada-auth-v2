@@ -63,7 +63,7 @@
         "type-fest": "^4.38.0",
         "typescript": "^5.8.2",
         "typescript-eslint": "^8.28.0",
-        "wrangler": "^4.4.1"
+        "wrangler": "^4.5.0"
     },
     "patchedDependencies": {
         "discord-api-types@0.37.119": "patches/discord-api-types@0.37.119.patch",
