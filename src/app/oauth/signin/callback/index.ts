@@ -18,6 +18,7 @@ import {
 } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, $Session, $SessionId } from "@/lib/schema/kvNamespaces"
+import { oAuthCallbackQueryParams } from "@/lib/schema/oauth"
 import { $TokenPayload } from "@/lib/schema/tokenPayload"
 import { generateSchema } from "@/lib/schema/utils"
 import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
@@ -28,20 +29,7 @@ import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/nadaAc"
 
 const app = new Hono<Env>().get(
     "/",
-    vValidator(
-        "query",
-        v.union([
-            v.object({
-                state: v.string(),
-                code: v.string(),
-                error: v.optional(v.undefined()),
-            }),
-            v.object({
-                state: v.string(),
-                error: v.string(),
-            }),
-        ]),
-    ),
+    vValidator("query", oAuthCallbackQueryParams),
     vValidator(
         "cookie",
         v.object({
