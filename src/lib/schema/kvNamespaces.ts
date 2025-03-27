@@ -1,5 +1,6 @@
 import * as v from "valibot"
 
+import { id } from "../utils/fp"
 import { $APIUser, $APIWebhook, $Snowflake } from "./discord"
 import { $NadaAcWorkSpacePartialUser } from "./nadaAc"
 
@@ -32,8 +33,10 @@ const AuthNRequestKeyPrefixes = ["userId", "requestToken"] as const satisfies st
 export const $RequestToken = v.pipe(v.string(), v.nonEmpty())
 export const $AuthNRequest = v.union(
     AuthNRequestKeyPrefixes.map((keyPrefix) =>
-        v.custom<`${typeof keyPrefix}:${string}`>(
-            (input) => typeof input === "string" && new RegExp(`^${keyPrefix}:.+$`).test(input),
+        v.pipe(
+            v.string(),
+            v.startsWith(`${keyPrefix}:`),
+            v.transform(id<string, `${typeof keyPrefix}:${string}`>),
         ),
     ),
 )

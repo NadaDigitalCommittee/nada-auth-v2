@@ -1,6 +1,8 @@
 import type { NonEmptyTuple } from "type-fest"
 
-export const id = <T>(input: T): T => input
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export const id = <TInput, TOutput extends TInput = TInput>(input: TInput): TOutput =>
+    input as TOutput
 /**
  * @description Narrowing
  */
