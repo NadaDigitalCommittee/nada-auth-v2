@@ -30,7 +30,7 @@ export const $SessionRecord = v.record($SessionId, $Session)
 export type Session = v.InferOutput<typeof $Session>
 export type SessionRecord = v.InferOutput<typeof $SessionRecord>
 const AuthNRequestKeyPrefixes = ["userId", "requestToken"] as const satisfies string[]
-export const $RequestToken = v.pipe(v.string(), v.nonEmpty())
+export const $RequestToken = v.string()
 export const $AuthNRequest = v.union(
     AuthNRequestKeyPrefixes.map((keyPrefix) =>
         v.pipe(
