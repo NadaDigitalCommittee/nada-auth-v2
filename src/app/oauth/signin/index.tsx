@@ -8,28 +8,26 @@ import {
     type RESTPatchAPIWebhookWithTokenMessageResult,
     Routes,
 } from "discord-api-types/v10"
+import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { getCookie, setCookie } from "hono/cookie"
 import type { ReactNode } from "react"
 import * as v from "valibot"
 
-import type { AppType } from "@/app"
+import { callback } from "./callback"
+
 import { App } from "@/components/App"
 import { appSteps } from "@/components/AppStepper"
 import { ProfileForm } from "@/components/islands/profile-form/server"
 import { createLayout } from "@/components/layout"
 import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
-import {
-    $RequestToken,
-    $Session,
-    type AuthNRequestRecord,
-    type Session,
-} from "@/lib/schema/kvNamespaces"
+import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/kvNamespaces"
 import { $NadaAcWorkSpacePartialUser } from "@/lib/schema/nadaAc"
 import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
+import { generateSecret } from "@/lib/utils/secret"
 
 const ErrorAlert = ({ title, children }: { title: ReactNode; children: ReactNode }) => (
     <Alert
@@ -125,10 +123,29 @@ const app = new Hono<Env>()
             return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
         }
         const session = sessionParseResult.output
-        await sessionRecord.put(
-            sessionId,
-            JSON.stringify({ ...session, userProfile } satisfies Session),
-        )
+        if (session.state || session.nonce) {
+            c.status(400)
+            return c.render(<ErrorAlert title="Bad Request">セッションが不正です。</ErrorAlert>)
+        }
+        const reqUrl = new URL(c.req.url)
+        reqUrl.protocol = "https:"
+        reqUrl.search = ""
+        const honoClient = hc<typeof app>(reqUrl.href)
+        const redirectUri = honoClient.callback.$url()
+        const state = generateSecret(64)
+        const nonce = generateSecret(64)
+        await sessionRecord.put(sessionId, JSON.stringify(session))
+        const oAuth2Client = new OAuth2Client()
+        const authUrl = oAuth2Client.generateAuthUrl({
+            response_type: "code",
+            client_id: c.env.GOOGLE_OAUTH_CLIENT_ID,
+            redirect_uri: redirectUri.href,
+            scope: "openid email profile",
+            state,
+            nonce,
+        })
+        Object.assign(session, { state, nonce, userProfile })
+        await sessionRecord.put(sessionId, JSON.stringify(session))
         const errorContext = {
             guildId: session.guildId,
             user: session.user,
@@ -156,13 +173,11 @@ const app = new Hono<Env>()
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                 })
         }
-        const honoClient = hc<AppType>(new URL(c.req.url).origin)
-        const apiOAuthUrl: URL = honoClient.api.oauth.$url()
-        apiOAuthUrl.protocol = "https:"
-        return c.redirect(apiOAuthUrl)
+        return c.redirect(authUrl)
     })
+    .route("/callback", callback)
 
 /**
  * @package
  */
-export { app as authn }
+export { app as signin }

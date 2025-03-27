@@ -97,14 +97,14 @@ export const handler: ComponentHandler<Env, Button> = async (c) => {
         expirationTtl: import.meta.env.DEV ? sessionExpirationTtlDev : sessionExpirationTtl,
     })
     const honoClient = hc<AppType>(new URL(c.req.url).origin)
-    const authNUrl = honoClient.authn.$url({ query: { token: authNRequestToken } })
-    authNUrl.protocol = "https:"
+    const oAuthUrl = honoClient.oauth.signin.$url({ query: { token: authNRequestToken } })
+    oAuthUrl.protocol = "https:"
     const signInButtonLink = {
         label: "Google でサインイン",
         type: ComponentType.Button,
         style: ButtonStyle.Link,
         emoji: c.env.DISCORD_APPLICATION_EMOJIS.g_logo,
-        url: authNUrl.href,
+        url: oAuthUrl.href,
     } as const satisfies APIButtonComponentWithURL
     return c.ephemeral(true).res({
         content: `発行されたリンクは ${requestTokenExpirationTtl} 秒間、1 度だけ有効です。`,
