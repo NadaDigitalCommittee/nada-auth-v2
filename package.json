@@ -1,7 +1,8 @@
 {
     "name": "nada-auth-v2",
     "scripts": {
-        "dev": "concurrently --kill-others --names \"esbuild,wrangler\" \"bun build:client --watch --dev\" \"wrangler dev --live-reload --env=dev\"",
+        "dev": "concurrently --kill-others --names \"esbuild,wrangler\" \"bun build:client --watch --dev\" \"wrangler dev --live-reload --env=dev --port=8787\"",
+        "ngrok": "bun --env-file=./.dev.vars exec \"ngrok http --url=\\$NGROK_URL 8787\"",
         "deploy": "wrangler deploy --minify",
         "build:client": "bun run esbuild.config.ts",
         "register": "bun --env-file=./.prod.vars run --define ReadonlyMap=\"Map\" ./src/scripts/register.ts",
