@@ -22,8 +22,9 @@ import { oAuthCallbackQueryParams } from "@/lib/schema/oauth"
 import { $TokenPayload } from "@/lib/schema/tokenPayload"
 import { generateSchema } from "@/lib/schema/utils"
 import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
-import { shouldBeError } from "@/lib/utils/exceptions"
+import { orNull } from "@/lib/utils/exceptions"
 import { formatNickname } from "@/lib/utils/formatNickname"
+import { id } from "@/lib/utils/fp"
 import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/nadaAc"
 
 const app = new Hono<Env>().get(
@@ -47,8 +48,8 @@ const app = new Hono<Env>().get(
         deleteCookie(c, "sid")
         const query = c.req.valid("query")
         const { state } = query
-        const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
-        void (await sessionRecord.delete(sessionId).catch(shouldBeError))
+        const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
+        await sessionRecord.delete(sessionId)
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) return c.text("Session Expired", 401)
         const session = sessionParseResult.output
@@ -72,9 +73,7 @@ const app = new Hono<Env>().get(
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                 }))
-        const rawGuildConfig = await guildConfigRecord
-            .get(session.guildId, "json")
-            .catch(shouldBeError)
+        const rawGuildConfig = await guildConfigRecord.get(session.guildId, "json").catch(id)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
             await editOriginal({

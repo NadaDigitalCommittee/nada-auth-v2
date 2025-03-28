@@ -26,7 +26,7 @@ import type { Env } from "@/lib/schema/env"
 import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/kvNamespaces"
 import { $NadaAcWorkSpacePartialUser } from "@/lib/schema/nadaAc"
 import { sharedCookieOption } from "@/lib/utils/cookie"
-import { shouldBeError } from "@/lib/utils/exceptions"
+import { orNull } from "@/lib/utils/exceptions"
 import { generateSecret } from "@/lib/utils/secret"
 
 const ErrorAlert = ({ title, children }: { title: ReactNode; children: ReactNode }) => (
@@ -129,7 +129,7 @@ const app = new Hono<Env>()
             const sessionRecord = c.env.Sessions
             const { rest } = c.var
             const sessionId = c.req.valid("cookie").sid
-            const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
+            const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
             const sessionParseResult = v.safeParse($Session, rawSession)
             if (!sessionParseResult.success) {
                 c.status(400)

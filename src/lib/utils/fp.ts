@@ -3,6 +3,11 @@ import type { NonEmptyTuple } from "type-fest"
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const id = <TInput, TOutput extends TInput = TInput>(input: TInput): TOutput =>
     input as TOutput
+export const constant =
+    <T>(input: T) =>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_: unknown) =>
+        input
 /**
  * @description Narrowing
  */

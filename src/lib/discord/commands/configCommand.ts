@@ -1,4 +1,4 @@
-import { type DiscordAPIError, REST } from "@discordjs/rest"
+import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
     isGuildInteraction,
@@ -14,7 +14,6 @@ import {
     ChannelType,
     InteractionContextType,
     PermissionFlagsBits,
-    type RESTDeleteAPIWebhookResult,
     type RESTPatchAPIWebhookJSONBody,
     type RESTPatchAPIWebhookResult,
     type RESTPostAPIChannelWebhookJSONBody,
@@ -41,7 +40,7 @@ import {
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type GuildConfig } from "@/lib/schema/kvNamespaces"
 import type { MapKeyOf } from "@/lib/types/utils/map"
-import { shouldBeError } from "@/lib/utils/exceptions"
+import { id } from "@/lib/utils/fp"
 
 const configSetOptions = [
     {
@@ -211,7 +210,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         subcommandString: c.sub.string,
     } as const satisfies ErrorContext
     // NOTE: 型と値が乖離するのでジェネリクスはつけない
-    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(shouldBeError)
+    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(id)
     // TODO: エラーメッセージを定数管理
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {
@@ -278,11 +277,8 @@ export const handler: CommandHandler<Env> = async (c) => {
                                 channel_id: channelOptionValue,
                             } satisfies RESTPatchAPIWebhookJSONBody,
                         })
-                        .catch(shouldBeError)) as
-                        | RESTPatchAPIWebhookResult
-                        | DiscordAPIError
-                        | TypeError
-                    if (webhookModificationResult instanceof Error) {
+                        .catch(id)) as RESTPatchAPIWebhookResult | DiscordAPIError
+                    if (webhookModificationResult instanceof DiscordAPIError) {
                         await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
                         return c.res(
                             `:x: Webhook <@${loggingWebhook.id}> を更新できませんでした。\n理由: \n>>> ${webhookModificationResult.message}`,
@@ -291,13 +287,10 @@ export const handler: CommandHandler<Env> = async (c) => {
                     guildConfig._loggingWebhook = webhookModificationResult
                 } else if (isPresent(loggingWebhook) && !isPresent(channelOptionValue)) {
                     // すでに webhook が作成されていて、それを削除する場合
-                    const webhookDeletionResult = (await rest
+                    const webhookDeletionResult = await rest
                         .delete(Routes.webhook(loggingWebhook.id))
-                        .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-                        | RESTDeleteAPIWebhookResult
-                        | DiscordAPIError
-                        | TypeError
-                    if (webhookDeletionResult instanceof Error) {
+                        .catch(id)
+                    if (webhookDeletionResult instanceof DiscordAPIError) {
                         await reportErrorWithContext(webhookDeletionResult, errorContext, c.env)
                         return c.res(
                             `:x: Webhook <@${loggingWebhook.id}> を削除できませんでした。\n理由: \n>>> ${webhookDeletionResult.message}`,
@@ -312,11 +305,8 @@ export const handler: CommandHandler<Env> = async (c) => {
                                 name: "nada-auth logging",
                             } satisfies RESTPostAPIChannelWebhookJSONBody,
                         })
-                        .catch(shouldBeError)) as
-                        | RESTPostAPIChannelWebhookResult
-                        | DiscordAPIError
-                        | TypeError
-                    if (webhookCreationResult instanceof Error) {
+                        .catch(id)) as RESTPostAPIChannelWebhookResult | DiscordAPIError
+                    if (webhookCreationResult instanceof DiscordAPIError) {
                         await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
                         return c.res(
                             `:x: チャンネル <#${channelOptionValue}> に Webhook を作成できませんでした。\n理由: \n>>> ${webhookCreationResult.message}`,
@@ -352,47 +342,36 @@ export const handler: CommandHandler<Env> = async (c) => {
             const forceReset = configResetOptions[0]?.value ?? false
             // TODO: このあたり共通化する
             const loggingWebhook = guildConfig._loggingWebhook
-            const loggingWebhookDeletionResult =
-                loggingWebhook &&
-                ((await rest.delete(Routes.webhook(loggingWebhook.id)).catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-                    | RESTDeleteAPIWebhookResult
-                    | DiscordAPIError
-                    | TypeError)
-            if (!forceReset && loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
-                await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
-                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
+            if (loggingWebhook) {
+                const loggingWebhookDeletionResult = await rest
+                    .delete(Routes.webhook(loggingWebhook.id))
+                    .catch(id)
+                if (!forceReset && loggingWebhookDeletionResult instanceof DiscordAPIError) {
+                    await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
+                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
 :arrow_right_hook: Webhook <@${loggingWebhook.id}> を削除することができませんでした。
 理由:
 >>> ${loggingWebhookDeletionResult.message}`)
+                }
             }
             const signInButtonWebhook = guildConfig._signInButtonWebhook
-            const signInButtonWebhookDeletionResult =
-                signInButtonWebhook &&
-                ((await rest
+            if (signInButtonWebhook) {
+                const signInButtonWebhookDeletionResult = await rest
                     .delete(Routes.webhook(signInButtonWebhook.id))
-                    .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-                    | RESTDeleteAPIWebhookResult
-                    | DiscordAPIError
-                    | TypeError)
-            if (
-                !forceReset &&
-                signInButtonWebhook &&
-                signInButtonWebhookDeletionResult instanceof Error
-            ) {
-                await reportErrorWithContext(signInButtonWebhookDeletionResult, errorContext, c.env)
-                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
+                    .catch(id)
+                if (!forceReset && signInButtonWebhookDeletionResult instanceof DiscordAPIError) {
+                    await reportErrorWithContext(
+                        signInButtonWebhookDeletionResult,
+                        errorContext,
+                        c.env,
+                    )
+                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
 :arrow_right_hook: Webhook <@${signInButtonWebhook.id}> を削除することができませんでした。
 理由:
 >>> ${signInButtonWebhookDeletionResult.message}`)
+                }
             }
-            const guildConfigDeletionResult = await guildConfigRecord
-                .delete(guildId)
-                .catch(shouldBeError)
-            if (guildConfigDeletionResult instanceof Error) {
-                await reportErrorWithContext(guildConfigDeletionResult, errorContext, c.env)
-                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: データを削除できませんでした。`)
-            }
+            await guildConfigRecord.delete(guildId)
             return c.res({
                 content: ":white_check_mark: サーバー設定が初期化されました。",
                 embeds: [generateConfigTableEmbed(guildConfigInit)],

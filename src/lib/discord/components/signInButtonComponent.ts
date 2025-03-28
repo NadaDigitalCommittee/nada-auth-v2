@@ -20,7 +20,7 @@ import { type ErrorContext, reportErrorWithContext } from "../utils"
 import type { AppType } from "@/app"
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type Session } from "@/lib/schema/kvNamespaces"
-import { shouldBeError } from "@/lib/utils/exceptions"
+import { id } from "@/lib/utils/fp"
 import { generateSecret } from "@/lib/utils/secret"
 
 /**
@@ -49,7 +49,7 @@ export const handler: ComponentHandler<Env, Button> = async (c) => {
         member,
         path: "Components.signInButton.handler",
     } as const satisfies ErrorContext
-    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(shouldBeError)
+    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(id)
     if (rawGuildConfig instanceof Error) {
         await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
         return c
