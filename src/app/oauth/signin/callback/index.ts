@@ -22,7 +22,6 @@ import { oAuthCallbackQueryParams } from "@/lib/schema/oauth"
 import { $TokenPayload } from "@/lib/schema/tokenPayload"
 import { generateSchema } from "@/lib/schema/utils"
 import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
-import { sharedCookieNames } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
 import { formatNickname } from "@/lib/utils/formatNickname"
 import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/nadaAc"
@@ -33,7 +32,7 @@ const app = new Hono<Env>().get(
     vValidator(
         "cookie",
         v.object({
-            [sharedCookieNames.sessionId]: $SessionId,
+            sid: $SessionId,
         }),
     ),
     async (c) => {
@@ -45,7 +44,7 @@ const app = new Hono<Env>().get(
 * メールアドレスとプロフィール情報へのアクセスを許可していること。
 * 正しいプロフィール情報を入力したこと。`
         const sessionId = c.req.valid("cookie").sid
-        deleteCookie(c, sharedCookieNames.sessionId)
+        deleteCookie(c, "sid")
         const query = c.req.valid("query")
         const { state } = query
         const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)

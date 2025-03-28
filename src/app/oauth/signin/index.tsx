@@ -25,7 +25,7 @@ import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $RequestToken, $Session, type AuthNRequestRecord } from "@/lib/schema/kvNamespaces"
 import { $NadaAcWorkSpacePartialUser } from "@/lib/schema/nadaAc"
-import { sharedCookieNames, sharedCookieOption } from "@/lib/utils/cookie"
+import { sharedCookieOption } from "@/lib/utils/cookie"
 import { shouldBeError } from "@/lib/utils/exceptions"
 import { generateSecret } from "@/lib/utils/secret"
 
@@ -78,12 +78,12 @@ const app = new Hono<Env>()
                 const kvSessionId = await authNRequestRecord.get(kvSessionIdKey)
                 if (kvSessionId) {
                     await authNRequestRecord.delete(kvSessionIdKey)
-                    setCookie(c, sharedCookieNames.sessionId, kvSessionId, {
+                    setCookie(c, "sid", kvSessionId, {
                         ...sharedCookieOption,
                         sameSite: "Lax",
                     })
                     return kvSessionId
-                } else return getCookie(c, sharedCookieNames.sessionId)
+                } else return getCookie(c, "sid")
             })()
             if (!sessionId) {
                 c.status(400)
@@ -92,89 +92,103 @@ const app = new Hono<Env>()
             return c.render(<ProfileForm />)
         },
     )
-    .post("/", async (c) => {
-        const formDataParseResult = v.safeParse(
-            $NadaAcWorkSpacePartialUser,
-            decode(await c.req.formData(), {
-                numbers: ["type", "profile.cohort", "profile.class", "profile.number"],
+    .post(
+        "/",
+        vValidator(
+            "cookie",
+            v.object({
+                sid: v.string(),
             }),
-        )
-        if (!formDataParseResult.success) {
-            c.status(400)
-            return c.render(
-                <>
-                    <ErrorAlert title="Bad Request">
-                        フォームの入力内容が正しくありません。
-                    </ErrorAlert>
-                    <ProfileForm />
-                </>,
+            (result, c) => {
+                if (!result.success) {
+                    return c.render(
+                        <ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>,
+                    )
+                }
+            },
+        ),
+        async (c) => {
+            const formDataParseResult = v.safeParse(
+                $NadaAcWorkSpacePartialUser,
+                decode(await c.req.formData(), {
+                    numbers: ["type", "profile.cohort", "profile.class", "profile.number"],
+                }),
             )
-        }
-        const userProfile = formDataParseResult.output
-        const sessionRecord = c.env.Sessions
-        const { rest } = c.var
-        const sessionId = getCookie(c, sharedCookieNames.sessionId)
-        if (!sessionId)
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
-        const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
-        const sessionParseResult = v.safeParse($Session, rawSession)
-        if (!sessionParseResult.success) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
-        }
-        const session = sessionParseResult.output
-        if (session.state || session.nonce) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">セッションが不正です。</ErrorAlert>)
-        }
-        const reqUrl = new URL(c.req.url)
-        reqUrl.protocol = "https:"
-        reqUrl.search = ""
-        const honoClient = hc<typeof app>(reqUrl.href)
-        const redirectUri = honoClient.callback.$url()
-        const state = generateSecret(64)
-        const nonce = generateSecret(64)
-        await sessionRecord.put(sessionId, JSON.stringify(session))
-        const oAuth2Client = new OAuth2Client()
-        const authUrl = oAuth2Client.generateAuthUrl({
-            response_type: "code",
-            client_id: c.env.GOOGLE_OAUTH_CLIENT_ID,
-            redirect_uri: redirectUri.href,
-            scope: "openid email profile",
-            state,
-            nonce,
-        })
-        Object.assign(session, { state, nonce, userProfile })
-        await sessionRecord.put(sessionId, JSON.stringify(session))
-        const errorContext = {
-            guildId: session.guildId,
-            user: session.user,
-        } as const satisfies ErrorContext
-        const originalInteractionResRoute = Routes.webhookMessage(
-            c.env.DISCORD_APPLICATION_ID,
-            session.interactionToken,
-            "@original",
-        )
-        const originalResponse = (await rest
-            .get(originalInteractionResRoute)
-            .catch(async (e: unknown) => {
-                if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                return null
-            })) as RESTPatchAPIWebhookWithTokenMessageResult | null
-        if (originalResponse?.components?.length) {
-            await rest
-                .patch(originalInteractionResRoute, {
-                    body: {
-                        content: ":tickets: リンクが使用されました。",
-                        components: [],
-                    } satisfies RESTPatchAPIWebhookWithTokenMessageJSONBody,
-                })
+            if (!formDataParseResult.success) {
+                c.status(400)
+                return c.render(
+                    <>
+                        <ErrorAlert title="Bad Request">
+                            フォームの入力内容が正しくありません。
+                        </ErrorAlert>
+                        <ProfileForm />
+                    </>,
+                )
+            }
+            const userProfile = formDataParseResult.output
+            const sessionRecord = c.env.Sessions
+            const { rest } = c.var
+            const sessionId = c.req.valid("cookie").sid
+            const rawSession = await sessionRecord.get(sessionId, "json").catch(shouldBeError)
+            const sessionParseResult = v.safeParse($Session, rawSession)
+            if (!sessionParseResult.success) {
+                c.status(400)
+                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            }
+            const session = sessionParseResult.output
+            if (session.state || session.nonce) {
+                c.status(400)
+                return c.render(<ErrorAlert title="Bad Request">セッションが不正です。</ErrorAlert>)
+            }
+            const reqUrl = new URL(c.req.url)
+            reqUrl.protocol = "https:"
+            reqUrl.search = ""
+            const honoClient = hc<typeof app>(reqUrl.href)
+            const redirectUri = honoClient.callback.$url()
+            const state = generateSecret(64)
+            const nonce = generateSecret(64)
+            await sessionRecord.put(sessionId, JSON.stringify(session))
+            const oAuth2Client = new OAuth2Client()
+            const authUrl = oAuth2Client.generateAuthUrl({
+                response_type: "code",
+                client_id: c.env.GOOGLE_OAUTH_CLIENT_ID,
+                redirect_uri: redirectUri.href,
+                scope: "openid email profile",
+                state,
+                nonce,
+            })
+            Object.assign(session, { state, nonce, userProfile })
+            await sessionRecord.put(sessionId, JSON.stringify(session))
+            const errorContext = {
+                guildId: session.guildId,
+                user: session.user,
+            } as const satisfies ErrorContext
+            const originalInteractionResRoute = Routes.webhookMessage(
+                c.env.DISCORD_APPLICATION_ID,
+                session.interactionToken,
+                "@original",
+            )
+            const originalResponse = (await rest
+                .get(originalInteractionResRoute)
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                })
-        }
-        return c.redirect(authUrl)
-    })
+                    return null
+                })) as RESTPatchAPIWebhookWithTokenMessageResult | null
+            if (originalResponse?.components?.length) {
+                await rest
+                    .patch(originalInteractionResRoute, {
+                        body: {
+                            content: ":tickets: リンクが使用されました。",
+                            components: [],
+                        } satisfies RESTPatchAPIWebhookWithTokenMessageJSONBody,
+                    })
+                    .catch(async (e: unknown) => {
+                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                    })
+            }
+            return c.redirect(authUrl)
+        },
+    )
     .route("/callback", callback)
 
 /**
