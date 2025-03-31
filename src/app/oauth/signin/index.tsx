@@ -17,8 +17,7 @@ import * as v from "valibot"
 
 import { callback } from "./callback"
 
-import { App } from "@/components/App"
-import { appSteps } from "@/components/AppStepper"
+import { App, type AppStep } from "@/components/App"
 import { ProfileForm } from "@/components/islands/profile-form/server"
 import { createLayout } from "@/components/layout"
 import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
@@ -41,13 +40,36 @@ const ErrorAlert = ({ title, children }: { title: ReactNode; children: ReactNode
     </Alert>
 )
 
+const appSteps = [
+    {
+        name: "情報入力",
+        nameVerbose: "プロフィール情報を入力",
+    },
+    {
+        name: "サインイン",
+        nameVerbose: "Google でサインイン",
+    },
+    {
+        name: "アクセス許可",
+        nameVerbose: "アクセス許可",
+    },
+    {
+        name: "完了",
+        nameVerbose: "完了",
+    },
+] as const satisfies AppStep[]
+
 const STEP = 0
 
 const app = new Hono<Env>()
     .use(
         reactRenderer(({ children }) =>
             createLayout({ head: <title>{appSteps[STEP].nameVerbose}</title> })({
-                children: <App activeStep={STEP}>{children}</App>,
+                children: (
+                    <App appSteps={appSteps} activeStep={STEP}>
+                        {children}
+                    </App>
+                ),
             }),
         ),
     )
