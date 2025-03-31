@@ -87,6 +87,7 @@ export const Core = () => {
                 }),
             )
         })()
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- dirtyFieldsは更新されると自動で再トリガーされる / triggerは更新を監視する対象ではない
     }, [isStudent])
 
     const CurrentFormDataSchema = isStudent ? $StudentProfileFormData : $NonStudentProfileFormData
