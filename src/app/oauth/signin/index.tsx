@@ -1,7 +1,5 @@
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
-import { AlertTitle, css } from "@mui/material"
-import Alert from "@mui/material/Alert"
 import { decode } from "decode-formdata"
 import {
     type RESTPatchAPIWebhookWithTokenMessageJSONBody,
@@ -12,12 +10,12 @@ import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { getCookie, setCookie } from "hono/cookie"
-import type { ReactNode } from "react"
 import * as v from "valibot"
 
 import { callback } from "./callback"
 
 import { App, type AppStep } from "@/components/App"
+import { ErrorAlert } from "@/components/ErrorAlert"
 import { ProfileForm } from "@/components/islands/profile-form/server"
 import { createLayout } from "@/components/layout"
 import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
@@ -27,18 +25,6 @@ import { $NadaAcWorkSpacePartialUser } from "@/lib/schema/nadaAc"
 import { sharedCookieOption } from "@/lib/utils/cookie"
 import { orNull } from "@/lib/utils/exceptions"
 import { generateSecret } from "@/lib/utils/secret"
-
-const ErrorAlert = ({ title, children }: { title: ReactNode; children: ReactNode }) => (
-    <Alert
-        severity="error"
-        css={css`
-            width: 100%;
-        `}
-    >
-        <AlertTitle>{title}</AlertTitle>
-        {children}
-    </Alert>
-)
 
 const appSteps = [
     {
