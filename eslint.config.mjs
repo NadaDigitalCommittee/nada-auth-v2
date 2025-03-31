@@ -2,6 +2,7 @@ import pluginJs from "@eslint/js"
 import eslintConfigPrettier from "eslint-config-prettier"
 import importAccess from "eslint-plugin-import-access/flat-config"
 import pluginReact from "eslint-plugin-react"
+import pluginReactHooks from "eslint-plugin-react-hooks"
 import globals from "globals"
 import tseslint from "typescript-eslint"
 
@@ -22,6 +23,7 @@ export default tseslint.config(
     tseslint.configs.strictTypeChecked,
     pluginReact.configs.flat.recommended,
     pluginReact.configs.flat["jsx-runtime"],
+    pluginReactHooks.configs["recommended-latest"],
     {
         rules: {
             "@typescript-eslint/switch-exhaustiveness-check": [
