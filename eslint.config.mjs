@@ -1,6 +1,7 @@
 import pluginJs from "@eslint/js"
 import eslintConfigPrettier from "eslint-config-prettier"
 import importAccess from "eslint-plugin-import-access/flat-config"
+import reactPlugin from "eslint-plugin-react"
 import globals from "globals"
 import tseslint from "typescript-eslint"
 
@@ -8,6 +9,7 @@ export default tseslint.config(
     { files: ["**/*.{js,mjs,cjs,ts,tsx}"] },
     { ignores: ["eslint.config.mjs", ".wrangler/**/*", "dist/**/*"] },
     {
+        settings: { react: { version: "detect" } },
         languageOptions: {
             globals: globals.browser,
             parserOptions: {
@@ -18,6 +20,8 @@ export default tseslint.config(
     },
     pluginJs.configs.recommended,
     tseslint.configs.strictTypeChecked,
+    reactPlugin.configs.flat.recommended,
+    reactPlugin.configs.flat["jsx-runtime"],
     {
         rules: {
             "@typescript-eslint/switch-exhaustiveness-check": [
@@ -58,6 +62,14 @@ export default tseslint.config(
         },
         rules: {
             "import-access/jsdoc": ["error"],
+        },
+    },
+    {
+        plugins: {
+            react: reactPlugin,
+        },
+        rules: {
+            "react/no-unknown-property": ["error", { ignore: ["css"] }],
         },
     },
     eslintConfigPrettier,
