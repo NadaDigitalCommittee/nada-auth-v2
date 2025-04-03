@@ -15,6 +15,7 @@ import { Embed } from "discord-hono"
 import type { Context } from "hono"
 
 import type { Env } from "../schema/env"
+import { loggingWebhookAvatarPath } from "./constants"
 import type { InteractionsNSPath } from "./structure"
 
 /**
@@ -45,29 +46,6 @@ export const prettifyOptionValue = <
             return `<@${optionValue}>`
     }
 }
-
-export class AvatarUrl {
-    private pathname: string
-
-    constructor(pathname: string) {
-        this.pathname = pathname
-    }
-
-    getUrl(urlWithOrigin: string | URL) {
-        const avatarUrl = new URL(urlWithOrigin)
-        avatarUrl.protocol = "https:"
-        avatarUrl.search = ""
-        avatarUrl.hash = ""
-        avatarUrl.pathname = this.pathname
-        return avatarUrl
-    }
-}
-
-export const loggingWebhookAvatarUrlOf = (urlWithOrigin: string | URL) =>
-    new AvatarUrl("/assets/u1fa84_u1f525.webp").getUrl(urlWithOrigin)
-
-export const signInButtonWebhookDefaultAvatarUrlOf = (urlWithOrigin: string | URL) =>
-    new AvatarUrl("/assets/u1fa84_u1f4e3.webp").getUrl(urlWithOrigin)
 
 export interface ErrorContext {
     guildId?: Snowflake
@@ -127,7 +105,7 @@ export class Logger {
         this.author = options.author
         this.timestamp = new Date(options.timestampInSeconds * 1000)
         this.rest = new REST({ version: "10" }).setToken(options.context.env.DISCORD_TOKEN)
-        this.avatarUrl = loggingWebhookAvatarUrlOf(options.context.req.url)
+        this.avatarUrl = new URL(loggingWebhookAvatarPath, options.context.env.ORIGIN)
     }
 
     static readonly colors: Record<LogLevel, number> = {

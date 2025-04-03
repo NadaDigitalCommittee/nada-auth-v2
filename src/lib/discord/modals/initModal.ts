@@ -12,12 +12,8 @@ import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
 import { Components as CustomComponents } from ".."
-import { guildConfigInit } from "../constants"
-import {
-    type ErrorContext,
-    reportErrorWithContext,
-    signInButtonWebhookDefaultAvatarUrlOf,
-} from "../utils"
+import { guildConfigInit, signInButtonWebhookAvatarPath } from "../constants"
+import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig } from "@/lib/schema/kvNamespaces"
@@ -112,7 +108,7 @@ export const handler: ModalHandler<
             body: {
                 avatar_url: signInButtonWebhook.avatar
                     ? new CDN().avatar(signInButtonWebhook.id, signInButtonWebhook.avatar)
-                    : signInButtonWebhookDefaultAvatarUrlOf(c.req.url).href,
+                    : new URL(signInButtonWebhookAvatarPath, c.env.ORIGIN).href,
                 content: messageContent,
                 components: new Components()
                     .row({ ...CustomComponents.signInButton.component, label: buttonLabel })

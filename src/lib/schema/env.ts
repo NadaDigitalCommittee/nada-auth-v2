@@ -32,6 +32,7 @@ export const $EnvVars = v.object({
         $AllowedEmailDomains,
         v.pipe(v.string(), v.transform(JSON.parse), $AllowedEmailDomains),
     ]),
+    ORIGIN: v.string(),
 })
 export interface Env extends EnvPrimitive {
     Bindings: { ASSETS: Fetcher } & KVNamespaces & v.InferOutput<typeof $EnvVars>

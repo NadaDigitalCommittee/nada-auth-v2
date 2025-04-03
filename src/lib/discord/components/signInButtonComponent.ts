@@ -96,7 +96,7 @@ export const handler: ComponentHandler<Env, Button> = async (c) => {
     await sessionRecord.put(sessionId, JSON.stringify(session), {
         expirationTtl: import.meta.env.DEV ? sessionExpirationTtlDev : sessionExpirationTtl,
     })
-    const honoClient = hc<AppType>(new URL(c.req.url).origin)
+    const honoClient = hc<AppType>(c.env.ORIGIN)
     const oAuthUrl = honoClient.oauth.signin.$url({ query: { token: authNRequestToken } })
     oAuthUrl.protocol = "https:"
     const signInButtonLink = {

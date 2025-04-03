@@ -14,6 +14,7 @@ import * as v from "valibot"
 
 import { callback } from "./callback"
 
+import type { AppType } from "@/app"
 import { App, type AppStep } from "@/components/App"
 import { ErrorAlert } from "@/components/ErrorAlert"
 import { ProfileForm } from "@/components/islands/profile-form/server"
@@ -148,11 +149,8 @@ const app = new Hono<Env>()
                 c.status(400)
                 return c.render(<ErrorAlert title="Bad Request">セッションが不正です。</ErrorAlert>)
             }
-            const reqUrl = new URL(c.req.url)
-            reqUrl.protocol = "https:"
-            reqUrl.search = ""
-            const honoClient = hc<typeof app>(reqUrl.href)
-            const redirectUri = honoClient.callback.$url()
+            const honoClient = hc<AppType>(c.env.ORIGIN)
+            const redirectUri = honoClient.oauth.signin.callback.$url()
             const state = generateSecret(64)
             const nonce = generateSecret(64)
             await sessionRecord.put(sessionId, JSON.stringify(session))
