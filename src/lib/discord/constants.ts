@@ -32,3 +32,6 @@ export const guildConfigInit = {
     loggingChannelId: undefined,
     strictIntegrityCheck: false,
 } satisfies GuildConfig
+
+export const loggingWebhookAvatarPath = "/assets/u1fa84_u1f525.webp"
+export const signInButtonWebhookAvatarPath = "/assets/u1fa84_u1f4e3.webp"

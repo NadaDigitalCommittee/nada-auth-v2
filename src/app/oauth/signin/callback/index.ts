@@ -6,9 +6,11 @@ import {
 } from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
+import { hc } from "hono/client"
 import { deleteCookie } from "hono/cookie"
 import * as v from "valibot"
 
+import type { AppType } from "@/app"
 import { guildConfigInit } from "@/lib/discord/constants"
 import {
     type ErrorContext,
@@ -90,9 +92,8 @@ const app = new Hono<Env>().get(
             })
             return c.text(query.error, 400)
         }
-        const redirectUri = new URL(c.req.url)
-        redirectUri.protocol = "https:"
-        redirectUri.search = ""
+        const honoClient = hc<AppType>(c.env.ORIGIN)
+        const redirectUri = honoClient.oauth.signin.callback.$url()
         const oAuth2client = new OAuth2Client({
             clientId: c.env.GOOGLE_OAUTH_CLIENT_ID,
             clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
