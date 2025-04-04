@@ -15,7 +15,7 @@ try {
     patchedPackageList.forEach((patchedPackage) => {
         console.write(createInitMessage(patchedPackage).padEnd(initMessageMaxLength + 3, "."))
         const [, patchedPackageName, patchedPackageVersion] =
-            /^(.+)@([^@]+$)/.exec(patchedPackage) ?? []
+            /^(.+)@([^@]+)$/.exec(patchedPackage) ?? []
         if (!patchedPackageName || !patchedPackageVersion) {
             console.write("✗ Fail\n")
             throw new Error(`Patched dependency entry "${patchedPackage}" is not a valid value.`)
