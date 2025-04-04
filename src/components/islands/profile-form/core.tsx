@@ -11,6 +11,7 @@ import { FcGoogle } from "react-icons/fc"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
+import { Unselectable } from "@/components/Unselectable"
 import {
     $NadaAcWorkSpacePartialOtherUser,
     $NadaAcWorkSpacePartialStudentUser,
@@ -214,13 +215,9 @@ export const Core = () => {
                 leaveTouchDelay={2000}
                 title={
                     !isValid && (
-                        <span
-                            css={css`
-                                user-select: none;
-                            `}
-                        >
+                        <Unselectable>
                             入力されていない項目があるか、入力にエラーがあるため、続行できません。
-                        </span>
+                        </Unselectable>
                     )
                 }
             >
