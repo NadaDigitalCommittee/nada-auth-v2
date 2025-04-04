@@ -153,7 +153,6 @@ const app = new Hono<Env>()
             const redirectUri = honoClient.oauth.signin.callback.$url()
             const state = generateSecret(64)
             const nonce = generateSecret(64)
-            await sessionRecord.put(sessionId, JSON.stringify(session))
             const oAuth2Client = new OAuth2Client()
             const authUrl = oAuth2Client.generateAuthUrl({
                 response_type: "code",
