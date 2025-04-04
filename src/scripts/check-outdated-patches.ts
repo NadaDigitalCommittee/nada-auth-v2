@@ -14,7 +14,12 @@ const initMessageMaxLength = Math.max(...patchedPackageList.map((s) => createIni
 try {
     patchedPackageList.forEach((patchedPackage) => {
         console.write(createInitMessage(patchedPackage).padEnd(initMessageMaxLength + 3, "."))
-        const [patchedPackageName, patchedPackageVersion] = patchedPackage.split("@")
+        const [, patchedPackageName, patchedPackageVersion] =
+            /^(.+)@([^@]+$)/.exec(patchedPackage) ?? []
+        if (!patchedPackageName || !patchedPackageVersion) {
+            console.write("✗ Fail\n")
+            throw new Error(`Patched dependency entry "${patchedPackage}" is not a valid value.`)
+        }
         const bunLockFileInstalledPackage = bunLockFileInstalledPackages[patchedPackageName]
         if (!bunLockFileInstalledPackage) {
             console.write("✗ Fail\n")
