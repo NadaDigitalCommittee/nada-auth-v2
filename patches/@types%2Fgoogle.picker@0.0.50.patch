@@ -1,0 +1,13 @@
+diff --git a/index.d.ts b/index.d.ts
+index 7dc0cd926921ecd6f41147cca6740eb3562c7d64..f422e543c630e3be2326ff05b8d0e24e4c36e4f0 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -236,7 +236,7 @@ declare namespace google {
+             /**
+              * A type representing the action taken by the user to dismiss the dialog.
+              */
+-            [Response.ACTION]: Action | string;
++            [Response.ACTION]: Action | (string & {});
+             /**
+              * An array of `DocumentObject`s selected by the user.
+              */

@@ -8,7 +8,12 @@
         "skipLibCheck": true,
         "verbatimModuleSyntax": true,
         "lib": ["ESNext", "DOM"],
-        "types": ["@cloudflare/workers-types/2023-07-01", "bun"],
+        "types": [
+            "@cloudflare/workers-types/2023-07-01",
+            "bun",
+            "@types/google.picker",
+            "@types/gapi"
+        ],
         "jsx": "react-jsx",
         "jsxImportSource": "@emotion/react",
         "baseUrl": ".",
