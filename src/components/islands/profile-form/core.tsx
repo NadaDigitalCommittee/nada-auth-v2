@@ -1,5 +1,5 @@
 import { Box, Button, FormControlLabel, Stack, Tooltip, css } from "@mui/material"
-import { useEffect, useRef, useSyncExternalStore } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import {
     CheckboxElement,
     SelectElement,
@@ -54,7 +54,7 @@ type ProfileFormData = v.InferOutput<typeof $ProfileFormData>
 export const Core = () => {
     const {
         control,
-        formState: { isValid, isSubmitting, dirtyFields },
+        formState: { isValid, dirtyFields },
         trigger,
     } = useForm<ProfileFormData>({
         mode: "onChange",
@@ -65,6 +65,7 @@ export const Core = () => {
             isStudent: true,
         },
     })
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const jstAcademicYearRef = useRef<number | null>(null)
     // https://qiita.com/ssssota/items/51278dc5d51801dfb3fc
     const jstAcademicYear = useSyncExternalStore(
@@ -106,6 +107,9 @@ export const Core = () => {
             method="POST"
             name={name}
             noValidate
+            onSubmit={() => {
+                setIsSubmitting(true)
+            }}
         >
             <FormControlLabel
                 control={<CheckboxElement name="isStudent" control={control} />}
@@ -233,7 +237,9 @@ export const Core = () => {
                         startIcon={<FcGoogle />}
                         type="submit"
                         size="large"
-                        disabled={!isValid || isSubmitting}
+                        disabled={!isValid}
+                        loading={isSubmitting}
+                        loadingPosition="start"
                         tabIndex={0}
                         css={css`
                             text-transform: none;
