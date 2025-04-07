@@ -5,6 +5,7 @@ import { Box, Button, Link, Stack, Tooltip, Typography, css } from "@mui/materia
 import { useState } from "react"
 
 import { ErrorAlert } from "@/components/ErrorAlert"
+import { NotchedOutline } from "@/components/NotchedOutline"
 import { Unselectable } from "@/components/Unselectable"
 import { forwardConditional } from "@/components/forwardConditional"
 import { useLoadScript } from "@/hooks/useLoadScript"
@@ -126,74 +127,43 @@ export const Core = ({ formAction, ...credentials }: { formAction: string } & Cr
             </Tooltip>
             {pickedFolder && (
                 <>
-                    <fieldset
-                        css={css`
-                            --caption-fontsize: 0.8rem;
-                            border: solid 1px #5a5a5a;
-                            border-radius: 5px;
-                            padding: 1rem;
-                            width: 100%;
-                            box-sizing: border-box;
-                            margin: 0;
-                        `}
-                    >
-                        <Typography
-                            variant="caption"
-                            component="legend"
-                            css={css`
-                                font-size: var(--caption-fontsize);
-                                padding: 0 0.3em;
-                            `}
+                    <NotchedOutline label="選択されたフォルダ">
+                        <Link
+                            href={pickedFolder.url}
+                            underline="hover"
+                            target="_blank"
+                            rel="noreferrer noopener"
                         >
-                            選択されたフォルダ
-                        </Typography>
-                        <Stack
-                            direction="row"
-                            css={css`
-                                width: 100%;
-                                height: 100%;
-                                margin-top: calc(-1 * var(--caption-fontsize));
-                                align-items: center;
-                                justify-content: space-between;
-                            `}
-                        >
-                            <Link
-                                href={pickedFolder.url}
-                                underline="hover"
-                                target="_blank"
-                                rel="noreferrer noopener"
+                            {pickedFolder.name}
+                        </Link>
+                        {!!pickedFolder.organizationDisplayName && (
+                            <Tooltip
+                                describeChild
+                                enterTouchDelay={0}
+                                leaveTouchDelay={2000}
+                                title={<Unselectable>組織の共有ドライブ</Unselectable>}
                             >
-                                {pickedFolder.name}
-                            </Link>
-                            {!!pickedFolder.organizationDisplayName && (
-                                <Tooltip
-                                    describeChild
-                                    enterTouchDelay={0}
-                                    leaveTouchDelay={2000}
-                                    title={<Unselectable>組織の共有ドライブ</Unselectable>}
+                                <Typography
+                                    variant="caption"
+                                    css={css`
+                                        line-height: unset;
+                                        display: flex;
+                                        flex-direction: row;
+                                        gap: 0.3em;
+                                    `}
                                 >
-                                    <Typography
-                                        variant="caption"
+                                    <FolderSharedOutlinedIcon
                                         css={css`
-                                            line-height: unset;
-                                            display: flex;
-                                            flex-direction: row;
-                                            gap: 0.3em;
+                                            width: 0.75em;
+                                            height: 0.75em;
                                         `}
-                                    >
-                                        <FolderSharedOutlinedIcon
-                                            css={css`
-                                                width: 0.75em;
-                                                height: 0.75em;
-                                            `}
-                                        />
-                                        {pickedFolder.organizationDisplayName}
-                                    </Typography>
-                                </Tooltip>
-                            )}
-                        </Stack>
-                        <input type="hidden" value={pickedFolder.id} name="folderId" />
-                    </fieldset>
+                                    />
+                                    {pickedFolder.organizationDisplayName}
+                                </Typography>
+                            </Tooltip>
+                        )}
+                    </NotchedOutline>
+                    <input type="hidden" value={pickedFolder.id} name="folderId" />
                     <Button
                         variant="outlined"
                         startIcon={<CheckIcon />}
