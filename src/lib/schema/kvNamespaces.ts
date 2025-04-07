@@ -10,6 +10,14 @@ export const $GuildConfig = v.object({
     nicknameFormat: v.optional(v.string()),
     loggingChannelId: v.optional($Snowflake),
     strictIntegrityCheck: v.optional(v.boolean()),
+    _sheet: v.optional(
+        v.object({
+            spreadsheetId: v.optional(v.string()),
+            refreshToken: v.string(),
+            accessToken: v.string(),
+            accessTokenExpiry: v.number(),
+        }),
+    ),
     _loggingWebhook: v.optional($APIWebhook),
     _signInButtonWebhook: v.optional($APIWebhook),
 })
@@ -33,6 +41,7 @@ export const $SheetsOAuthSession = v.object({
     guildId: $Snowflake,
     interactionToken: v.string(),
     state: v.optional(v.string()),
+    accessToken: v.optional(v.string()),
 })
 export const $SheetsOAuthSessionRecord = v.record($SessionId, $SheetsOAuthSession)
 export type SheetsOAuthSession = v.InferOutput<typeof $SheetsOAuthSession>
