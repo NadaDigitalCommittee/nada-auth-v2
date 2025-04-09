@@ -3,9 +3,11 @@ import {
     type RESTPatchAPIGuildMemberJSONBody,
     type RESTPatchAPIWebhookWithTokenMessageJSONBody,
     Routes,
+    type Snowflake,
 } from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
-import { Hono } from "hono"
+import { google } from "googleapis"
+import { type Context, Hono } from "hono"
 import { hc } from "hono/client"
 import { deleteCookie } from "hono/cookie"
 import * as v from "valibot"
@@ -19,15 +21,280 @@ import {
     reportErrorWithContext,
 } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
-import { $GuildConfig, $Session, $SessionId } from "@/lib/schema/kvNamespaces"
+import {
+    $GuildConfig,
+    $Session,
+    $SessionId,
+    type GuildConfig,
+    type Session,
+} from "@/lib/schema/kvNamespaces"
 import { oAuthCallbackQueryParams } from "@/lib/schema/oauth"
+import { $Rule, type Rule, roleTransformAction } from "@/lib/schema/spreadsheet"
 import { $TokenPayload } from "@/lib/schema/tokenPayload"
 import { generateSchema } from "@/lib/schema/utils"
-import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
+import { type NadaAcWorkSpaceUser, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { orNull } from "@/lib/utils/exceptions"
 import { formatNickname } from "@/lib/utils/formatNickname"
 import { id } from "@/lib/utils/fp"
 import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/nadaAc"
+import {
+    sheetId as targetSheetId,
+    valuesRangeA1,
+    zeroBasedRangeToA1Notation,
+} from "@/lib/utils/spreadsheet"
+
+const processSpreadsheet = async ({
+    context: c,
+    guildConfig,
+    session,
+    workspaceUser,
+    logger,
+}: {
+    context: Context<Env>
+    guildConfig: GuildConfig
+    session: Session
+    workspaceUser: NadaAcWorkSpaceUser
+    logger: Logger
+}) => {
+    if (!guildConfig._sheet?.spreadsheetId) return
+    const oAuth2Client = new google.auth.OAuth2({
+        clientId: c.env.GOOGLE_OAUTH_CLIENT_ID,
+        clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
+        credentials: {
+            access_token: guildConfig._sheet.accessToken,
+            refresh_token: guildConfig._sheet.refreshToken,
+        },
+    })
+    if (guildConfig._sheet.accessTokenExpiry <= Date.now()) {
+        const { credentials } = await oAuth2Client.refreshAccessToken()
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
+        guildConfig._sheet.accessToken = credentials.access_token!
+        guildConfig._sheet.accessTokenExpiry = credentials.expiry_date!
+        /* eslint-enable @typescript-eslint/no-non-null-assertion */
+        await c.env.GuildConfigs.put(session.guildId, JSON.stringify(guildConfig))
+    }
+    const sheets = google.sheets({ version: "v4", auth: oAuth2Client })
+    const spreadsheetMeta = await sheets.spreadsheets
+        .get({
+            spreadsheetId: guildConfig._sheet.spreadsheetId,
+            includeGridData: false,
+        })
+        .catch(id<unknown, Error>)
+    if (spreadsheetMeta instanceof Error) {
+        await logger.error({
+            title: "Failed to retrieve spreadsheet content",
+            fields: [
+                {
+                    name: "Reason",
+                    value: spreadsheetMeta.message,
+                },
+            ],
+        })
+        return
+    }
+    const sheetName = spreadsheetMeta.data.sheets?.find(
+        (s) => s.properties?.sheetId === targetSheetId,
+    )?.properties?.title
+    if (!sheetName) {
+        await logger.error({
+            title: "Failed to retrieve spreadsheet content",
+            fields: [
+                {
+                    name: "Reason",
+                    value: `Could not find sheet with ID ${targetSheetId}.`,
+                },
+            ],
+        })
+        return
+    }
+    const spreadsheetValuesGetResponse = await sheets.spreadsheets.values
+        .get({
+            spreadsheetId: guildConfig._sheet.spreadsheetId,
+            range: `${sheetName}!${valuesRangeA1}`,
+            majorDimension: "ROWS",
+        })
+        .catch(id<unknown, Error>)
+    if (spreadsheetValuesGetResponse instanceof Error) {
+        await logger.error({
+            title: "Failed to retrieve spreadsheet content",
+            fields: [
+                {
+                    name: "Reason",
+                    value: spreadsheetValuesGetResponse.message,
+                },
+            ],
+        })
+        return
+    }
+    const sheetValues = spreadsheetValuesGetResponse.data.values
+    if (!sheetValues || !sheetValues.length) return
+    const $NullableRule = v.nullable($Rule)
+    const failedRuleIssueStack: v.InferIssue<typeof $NullableRule>[] = []
+    const sheetValuesParseResult = v.safeParse(
+        v.array(
+            v.fallback($NullableRule, (output) => {
+                const issue = output?.issues?.[0]
+                if (issue) failedRuleIssueStack.push(issue)
+                return null
+            }),
+        ),
+        sheetValues,
+    )
+    if (!sheetValuesParseResult.success) {
+        await logger.error({
+            title: "Failed to parse spreadsheet contents",
+            fields: [
+                {
+                    name: "Details",
+                    value: `\`\`\`\n${sheetValuesParseResult.issues.map((issue) => issue.message).join("\n")}\`\`\``,
+                },
+            ],
+        })
+        return
+    }
+    type RuleSyntaxError = [rowIndex: number, message: string]
+    const ruleSyntaxErrors: RuleSyntaxError[] = []
+    const matchedRules = sheetValuesParseResult.output.reduce<
+        Array<Omit<Rule, "schema"> & { rowIndex: number }>
+    >((acc, rule, rowIndex) => {
+        if (rule) {
+            const { schema, ...rest } = rule
+            if (v.safeParse(schema, workspaceUser).success)
+                acc.push(Object.assign(rest, { rowIndex }))
+        } else {
+            const issue = failedRuleIssueStack.shift()
+            if (!issue) return acc
+            // 失敗しうるのはv.array($NadaAcWorkSpaceUserType)とv.array($CombinedGrade)
+            const [{ key: colIndex }, { key: indexInCell }] = issue.path as [
+                v.ArrayPathItem,
+                v.ArrayPathItem,
+            ]
+            const errorStack = `  at ${zeroBasedRangeToA1Notation(colIndex, rowIndex + 1 /* ヘッダー1行分 */)} (item ${indexInCell})`
+            ruleSyntaxErrors.push([rowIndex, `${issue.message}\n${errorStack}\n`])
+        }
+        return acc
+    }, [])
+    if (ruleSyntaxErrors.length) {
+        const [rowIndices, messages] = ruleSyntaxErrors.reduce<[number[], string[]]>(
+            (acc, cur) => {
+                acc[0].push(cur[0])
+                acc[1].push(cur[1])
+                return acc
+            },
+            [[], []],
+        )
+        await logger.error({
+            title: `Parsing matcher rules completed with errors. Skipping row(s): ${rowIndices.join(", ")}`,
+            fields: [
+                {
+                    name: "Details",
+                    value: `\`\`\`\n${messages.join("\n")}\`\`\``,
+                },
+            ],
+        })
+    }
+    const nicknameFormat = matchedRules
+        .values()
+        .map((rule) => rule.nickname)
+        .find((value) => value !== null)
+    if (nicknameFormat) {
+        const nicknameFormatResult = formatNickname(nicknameFormat, workspaceUser)
+        if (nicknameFormatResult.warnings.length) {
+            await logger.warn({
+                title: "Formatting nickname completed with warnings",
+                fields: [
+                    {
+                        name: "Details",
+                        value: `\`\`\`\n${nicknameFormatResult.warnings
+                            .map((w) => w.stack)
+                            .join("\n\n")}\`\`\``,
+                    },
+                ],
+            })
+        }
+        await c.var.rest
+            .patch(Routes.guildMember(session.guildId, session.user.id), {
+                body: {
+                    nick: nicknameFormatResult.formatted,
+                } satisfies RESTPatchAPIGuildMemberJSONBody,
+            })
+            .catch(async (e: unknown) => {
+                await logger.error({
+                    title: "Failed to modify nickname",
+                    fields: [
+                        {
+                            name: "Reason",
+                            value: getDiscordAPIErrorMessage(e),
+                        },
+                    ],
+                })
+            })
+    }
+    const roleOperationMap = new Map<Snowflake, number>()
+    const roleSyntaxErrors: RuleSyntaxError[] = []
+    matchedRules.forEach((rule) => {
+        const rolesParseResult = v.safeParse(v.pipe(v.string(), roleTransformAction), rule.roles)
+        if (!rolesParseResult.success) {
+            const [issue] = rolesParseResult.issues
+            const colIndex = 7 // ロールのcolIndexは7
+            const [{ key: indexInCell }] = issue.path as [v.ArrayPathItem]
+            const errorStack = `  at ${zeroBasedRangeToA1Notation(colIndex, rule.rowIndex + 1 /* ヘッダー1行分 */)} (item ${indexInCell})`
+            roleSyntaxErrors.push([rule.rowIndex, `${issue.message}\n${errorStack}\n`])
+            return
+        }
+        rolesParseResult.output.forEach(([roleId, op]) => {
+            roleOperationMap.set(roleId, op + (roleOperationMap.get(roleId) ?? 0))
+        })
+    })
+    if (roleSyntaxErrors.length) {
+        const [rowIndices, messages] = roleSyntaxErrors.reduce<[number[], string[]]>(
+            (acc, cur) => {
+                acc[0].push(cur[0])
+                acc[1].push(cur[1])
+                return acc
+            },
+            [[], []],
+        )
+        await logger.error({
+            title: `Parsing roles completed with errors. Skipping row(s): ${rowIndices.join(", ")}`,
+            fields: [
+                {
+                    name: "Details",
+                    value: `\`\`\`\n${messages.join("\n")}\`\`\``,
+                },
+            ],
+        })
+    }
+    const userRoles = new Set(session.roles)
+    // https://github.com/microsoft/TypeScript/issues/9998
+    let rolesHaveChanges = false as boolean
+    roleOperationMap.entries().forEach(([roleId, count]) => {
+        if (count > 0) {
+            userRoles.add(roleId)
+        } else if (count < 0) {
+            userRoles.delete(roleId)
+        } else return
+        rolesHaveChanges = true
+    })
+    if (!rolesHaveChanges) return
+    await c.var.rest
+        .patch(Routes.guildMember(session.guildId, session.user.id), {
+            body: {
+                roles: [...userRoles],
+            } satisfies RESTPatchAPIGuildMemberJSONBody,
+        })
+        .catch(async (e: unknown) => {
+            await logger.error({
+                title: "Failed to modify roles",
+                fields: [
+                    {
+                        name: "Reason",
+                        value: getDiscordAPIErrorMessage(e),
+                    },
+                ],
+            })
+        })
+}
 
 const app = new Hono<Env>().get(
     "/",
@@ -210,78 +477,13 @@ const app = new Hono<Env>().get(
                     })
             }
         }
-        if (guildConfig.nicknameFormat) {
-            const nicknameFormatResult = formatNickname(
-                guildConfig.nicknameFormat,
-                nadaACWorkSpaceUser,
-            )
-            if (nicknameFormatResult.warnings.length)
-                await logger
-                    .warn({
-                        title: "Warnings while formatting nickname",
-                        fields: [
-                            {
-                                name: "Details",
-                                value: `\`\`\`\n${nicknameFormatResult.warnings
-                                    .map((w) => w.stack)
-                                    .join("\n")}\`\`\``,
-                            },
-                        ],
-                    })
-                    .catch(async (e: unknown) => {
-                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    })
-            await rest
-                .patch(Routes.guildMember(session.guildId, session.user.id), {
-                    body: {
-                        nick: nicknameFormatResult.formatted,
-                    } satisfies RESTPatchAPIGuildMemberJSONBody,
-                })
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    await logger
-                        .error({
-                            title: "Failed to modify nickname",
-                            fields: [
-                                {
-                                    name: "Reason",
-                                    value: getDiscordAPIErrorMessage(e),
-                                },
-                            ],
-                        })
-                        .catch(async (e: unknown) => {
-                            if (e instanceof Error)
-                                await reportErrorWithContext(e, errorContext, c.env)
-                        })
-                })
-        }
-        if (guildConfig.authenticatedRoleId) {
-            await rest
-                .put(
-                    Routes.guildMemberRole(
-                        session.guildId,
-                        session.user.id,
-                        guildConfig.authenticatedRoleId,
-                    ),
-                )
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    await logger
-                        .error({
-                            title: "Failed to add role",
-                            fields: [
-                                {
-                                    name: "Reason",
-                                    value: getDiscordAPIErrorMessage(e),
-                                },
-                            ],
-                        })
-                        .catch(async (e: unknown) => {
-                            if (e instanceof Error)
-                                await reportErrorWithContext(e, errorContext, c.env)
-                        })
-                })
-        }
+        await processSpreadsheet({
+            context: c,
+            guildConfig,
+            session,
+            workspaceUser: nadaACWorkSpaceUser,
+            logger,
+        })
         const embedFields = (() => {
             const { type: userType, profile: userProfile } = nadaACWorkSpaceUser
             const commonEmbedFields = [
