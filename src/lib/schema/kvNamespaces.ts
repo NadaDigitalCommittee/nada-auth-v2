@@ -29,6 +29,7 @@ export const $SessionId = v.string()
 export const $Session = v.object({
     guildId: $Snowflake,
     user: $APIUser,
+    roles: v.array($Snowflake),
     interactionToken: v.string(),
     userProfile: v.optional($NadaAcWorkSpacePartialUser),
     state: v.optional(v.string()),

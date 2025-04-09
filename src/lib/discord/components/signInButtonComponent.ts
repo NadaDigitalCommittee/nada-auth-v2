@@ -43,7 +43,7 @@ export const handler: ComponentHandler<Env, Button> = async (c) => {
     const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     const { guild_id: guildId, member, token: interactionToken } = interaction
-    const { user } = member
+    const { user, roles } = member
     const errorContext = {
         guildId,
         member,
@@ -86,7 +86,7 @@ export const handler: ComponentHandler<Env, Button> = async (c) => {
         )
     const authNRequestToken = generateSecret(64)
     const sessionId = generateSecret(64)
-    const session: Session = { guildId, user, interactionToken }
+    const session: Session = { guildId, user, roles, interactionToken }
     await authNRequestRecord.put(`userId:${user.id}`, sessionId, {
         expirationTtl: sessionExpirationTtl,
     })
