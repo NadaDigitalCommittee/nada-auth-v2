@@ -7,7 +7,6 @@ import { Hono } from "hono"
 import { deleteCookie } from "hono/cookie"
 import * as v from "valibot"
 
-import { spreadsheetInit } from "../constants"
 import { appSteps } from "../steps"
 
 import { App } from "@/components/App"
@@ -21,6 +20,7 @@ import { $GuildConfig, $SessionId, $SheetsOAuthSession } from "@/lib/schema/kvNa
 import type { AppPropertiesV1 } from "@/lib/schema/spreadsheet"
 import { orNull } from "@/lib/utils/exceptions"
 import { id } from "@/lib/utils/fp"
+import { spreadsheetInit } from "@/lib/utils/spreadsheet"
 
 const STEP = 3
 
