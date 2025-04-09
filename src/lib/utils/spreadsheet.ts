@@ -15,6 +15,8 @@ const header = [
     ["ニックネーム", "利用者に設定するニックネームを表す、フォーマット指定子を含んだ文字列を入力します。"],
 ] as const
 
+const maxRowIndex = 1000
+
 const headerRange = {
     sheetId,
     startColumnIndex: 0,
@@ -23,7 +25,13 @@ const headerRange = {
     endRowIndex: 1,
 } as const satisfies sheets_v4.Schema$GridRange
 
-const maxRowIndex = 1000
+const valuesRange = {
+    sheetId,
+    startColumnIndex: 0,
+    startRowIndex: 0,
+    endColumnIndex: 9,
+    endRowIndex: maxRowIndex,
+} as const satisfies sheets_v4.Schema$GridRange
 
 export const spreadsheetInit: sheets_v4.Schema$Request[] = [
     {
@@ -131,19 +139,15 @@ export const spreadsheetInit: sheets_v4.Schema$Request[] = [
     },
     {
         repeatCell: {
-            range: {
-                sheetId,
-                startRowIndex: 0,
-                startColumnIndex: 0,
-                endRowIndex: maxRowIndex,
-                endColumnIndex: 9,
-            },
+            range: valuesRange,
             cell: {
                 userEnteredFormat: {
+                    wrapStrategy: "WRAP",
                     horizontalAlignment: "CENTER",
+                    verticalAlignment: "MIDDLE",
                 },
             },
-            fields: "userEnteredFormat.horizontalAlignment",
+            fields: "userEnteredFormat.wrapStrategy,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment",
         },
     },
 ]
