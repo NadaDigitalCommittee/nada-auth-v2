@@ -1,6 +1,20 @@
 import type { sheets_v4 } from "googleapis"
 
-const sheetId = 0
+export const sheetId = 0
+export const valuesRangeA1 = "A2:I"
+
+// eslint-disable-next-line @typescript-eslint/no-misused-spread
+const BASE26_DIGITS = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"]
+const BASE = 26
+const indexToA1Digits = (n: number, acc: number[] = []): string[] => {
+    const digits = n < BASE ? [] : indexToA1Digits(~-(n / BASE), acc)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    digits.push(BASE26_DIGITS[n % BASE]!)
+    return digits
+}
+
+export const zeroBasedRangeToA1Notation = (colIndex: number, rowIndex: number) =>
+    `${indexToA1Digits(colIndex).join("")}${rowIndex + 1}`
 
 // prettier-ignore
 const header = [
