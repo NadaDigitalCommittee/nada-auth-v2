@@ -13,9 +13,10 @@ import { getCookie, setCookie } from "hono/cookie"
 import * as v from "valibot"
 
 import { callback } from "./callback"
+import { appSteps } from "./steps"
 
 import type { AppType } from "@/app"
-import { App, type AppStep } from "@/components/App"
+import { App } from "@/components/App"
 import { ErrorAlert } from "@/components/ErrorAlert"
 import { ProfileForm } from "@/components/islands/profile-form/server"
 import { createLayout } from "@/components/layout"
@@ -26,25 +27,6 @@ import { $NadaAcWorkSpacePartialUser } from "@/lib/schema/nadaAc"
 import { sharedCookieOption } from "@/lib/utils/cookie"
 import { orNull } from "@/lib/utils/exceptions"
 import { generateSecret } from "@/lib/utils/secret"
-
-const appSteps = [
-    {
-        name: "情報入力",
-        nameVerbose: "プロフィール情報を入力",
-    },
-    {
-        name: "サインイン",
-        nameVerbose: "Google でサインイン",
-    },
-    {
-        name: "アクセス許可",
-        nameVerbose: "アクセス許可",
-    },
-    {
-        name: "完了",
-        nameVerbose: "完了",
-    },
-] as const satisfies AppStep[]
 
 const STEP = 0
 

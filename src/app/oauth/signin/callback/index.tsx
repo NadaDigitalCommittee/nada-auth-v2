@@ -1,3 +1,4 @@
+import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import {
     type RESTPatchAPIGuildMemberJSONBody,
@@ -12,7 +13,13 @@ import { hc } from "hono/client"
 import { deleteCookie } from "hono/cookie"
 import * as v from "valibot"
 
+import { appSteps } from "../steps"
+
 import type { AppType } from "@/app"
+import { App } from "@/components/App"
+import { ErrorAlert } from "@/components/ErrorAlert"
+import { SuccessAlert } from "@/components/SuccessAlert"
+import { createLayout } from "@/components/layout"
 import { guildConfigInit } from "@/lib/discord/constants"
 import {
     type ErrorContext,
@@ -296,14 +303,36 @@ const processSpreadsheet = async ({
         })
 }
 
+const STEP = 3
+
 const app = new Hono<Env>().get(
     "/",
-    vValidator("query", oAuthCallbackQueryParams),
+    reactRenderer(({ children }) =>
+        createLayout({ head: <title>{appSteps[STEP].nameVerbose}</title> })({
+            children: (
+                <App appSteps={appSteps} activeStep={STEP}>
+                    {children}
+                </App>
+            ),
+        }),
+    ),
+    vValidator("query", oAuthCallbackQueryParams, (result, c) => {
+        if (!result.success) {
+            c.status(400)
+            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
+        }
+    }),
     vValidator(
         "cookie",
         v.object({
             sid: $SessionId,
         }),
+        (result, c) => {
+            if (!result.success) {
+                c.status(400)
+                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            }
+        },
     ),
     async (c) => {
         const sessionRecord = c.env.Sessions
@@ -320,10 +349,20 @@ const app = new Hono<Env>().get(
         const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
         await sessionRecord.delete(sessionId)
         const sessionParseResult = v.safeParse($Session, rawSession)
-        if (!sessionParseResult.success) return c.text("Session Expired", 401)
+        if (!sessionParseResult.success) {
+            c.status(400)
+            deleteCookie(c, "sid")
+            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+        }
         const session = sessionParseResult.output
-        if (!(session.state && session.nonce)) return c.text("Unauthorized", 401)
-        if (state !== session.state) return c.text("Unauthorized", 401)
+        if (!(session.state && session.nonce)) {
+            c.status(400)
+            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+        }
+        if (state !== session.state) {
+            c.status(401)
+            return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
+        }
 
         const errorContext = {
             guildId: session.guildId,
@@ -346,10 +385,15 @@ const app = new Hono<Env>().get(
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
             await editOriginal({
-                content: ":x: 認証に失敗しました。理由: 内部エラー",
+                content: ":x: Discordサーバー側の問題により認証に失敗しました。",
                 components: [],
             })
-            return c.text("Internal Server Error", 500)
+            c.status(500)
+            return c.render(
+                <ErrorAlert title="Internal Server Error">
+                    Discordサーバー側の問題により認証に失敗しました。
+                </ErrorAlert>,
+            )
         }
         const guildConfig = guildConfigParseResult.output
         if (query.error !== undefined) {
@@ -357,25 +401,33 @@ const app = new Hono<Env>().get(
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            return c.text(query.error, 400)
+            c.status(400)
+            return c.render(<ErrorAlert title="Bad Request">{query.error}</ErrorAlert>)
         }
         const honoClient = hc<AppType>(c.env.ORIGIN)
         const redirectUri = honoClient.oauth.signin.callback.$url()
-        const oAuth2client = new OAuth2Client({
+        const oAuth2Client = new OAuth2Client({
             clientId: c.env.GOOGLE_OAUTH_CLIENT_ID,
             clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
             redirectUri: redirectUri.href,
         })
-        const { code } = query
-        const { tokens } = await oAuth2client.getToken(code)
+        const getTokenResponse = await oAuth2Client.getToken(query.code).catch(orNull)
+        if (!getTokenResponse) {
+            c.status(400)
+            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
+        }
+        const { tokens } = getTokenResponse
         if (!(tokens.id_token && tokens.access_token)) {
             await editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            return c.text("Missing or Insufficient Tokens", 401)
+            c.status(401)
+            return c.render(
+                <ErrorAlert title="Unauthorized">資格情報が不足しています。</ErrorAlert>,
+            )
         }
-        const loginTicket = await oAuth2client.verifyIdToken({
+        const loginTicket = await oAuth2Client.verifyIdToken({
             idToken: tokens.id_token,
             audience: c.env.GOOGLE_OAUTH_CLIENT_ID,
         })
@@ -389,7 +441,12 @@ const app = new Hono<Env>().get(
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            return c.text("Insufficient Identification Information", 401)
+            c.status(401)
+            return c.render(
+                <ErrorAlert title="Unauthorized">
+                    学内のユーザーであることを確認できませんでした。
+                </ErrorAlert>,
+            )
         }
         const tokenPayload = tokenPayloadParseResult.output
         if (tokenPayload.nonce !== session.nonce) {
@@ -397,7 +454,8 @@ const app = new Hono<Env>().get(
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            return c.text("Unauthorized", 401)
+            c.status(401)
+            return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
         }
         const logger = new Logger({
             context: c,
@@ -423,7 +481,12 @@ const app = new Hono<Env>().get(
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                 })
-            return c.text("Forbidden", 403)
+            c.status(401)
+            return c.render(
+                <ErrorAlert title="Unauthorized">
+                    学内のユーザーであることを確認できませんでした。
+                </ErrorAlert>,
+            )
         }
         const nadaACWorkSpaceUser = extractNadaACWorkSpaceUserFromTokenPayload(tokenPayload)
         const userProfileValidationResult =
@@ -460,7 +523,12 @@ const app = new Hono<Env>().get(
                     .catch(async (e: unknown) => {
                         if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                     })
-                return c.text("Forbidden", 403)
+                c.status(401)
+                return c.render(
+                    <ErrorAlert title="Unauthorized">
+                        入力されたプロフィール情報とアカウント情報が一致しません。
+                    </ErrorAlert>,
+                )
             } else {
                 await logger
                     .warn({
@@ -533,7 +601,7 @@ const app = new Hono<Env>().get(
             content: ":white_check_mark: 認証が完了しました。",
             components: [],
         })
-        return c.text("Success")
+        return c.render(<SuccessAlert>認証が完了しました。</SuccessAlert>)
     },
 )
 

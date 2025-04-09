@@ -1,6 +1,6 @@
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
-import { Alert, Link, css } from "@mui/material"
+import { Link } from "@mui/material"
 import { type RESTGetAPIGuildPreviewResult, Routes } from "discord-api-types/v10"
 import { google } from "googleapis"
 import { Hono } from "hono"
@@ -12,6 +12,7 @@ import { appSteps } from "../steps"
 import { App } from "@/components/App"
 import { ErrorAlert } from "@/components/ErrorAlert"
 import { NotchedOutline } from "@/components/NotchedOutline"
+import { SuccessAlert } from "@/components/SuccessAlert"
 import { createLayout } from "@/components/layout"
 import { guildConfigInit } from "@/lib/discord/constants"
 import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
@@ -178,15 +179,7 @@ const app = new Hono<Env>().post(
         await guildConfigRecord.put(session.guildId, JSON.stringify(guildConfig))
         return c.render(
             <>
-                <Alert
-                    severity="success"
-                    css={css`
-                        width: 100%;
-                        box-sizing: border-box;
-                    `}
-                >
-                    スプレッドシートが作成され、初期化されました。
-                </Alert>
+                <SuccessAlert>スプレッドシートが作成され、初期化されました。</SuccessAlert>
                 <NotchedOutline label="作成されたスプレッドシート">
                     <Link
                         href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}

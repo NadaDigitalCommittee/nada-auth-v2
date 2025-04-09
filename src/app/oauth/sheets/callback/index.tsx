@@ -123,7 +123,7 @@ const app = new Hono<Env>().get(
         const getTokenResponse = await oAuth2Client.getToken(query.code).catch(orNull)
         if (!getTokenResponse) {
             c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
         }
         const { tokens } = getTokenResponse
         if (!(tokens.access_token && tokens.expiry_date && tokens.refresh_token)) {
