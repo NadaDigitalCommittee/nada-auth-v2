@@ -5,8 +5,6 @@ import { getJstAcademicYear } from "./date"
 
 import {
     type CombinedGrade,
-    type Grade,
-    NadaAcWorkSpaceStudentType,
     type NadaAcWorkSpaceUser,
     NadaAcWorkSpaceUserType,
 } from "@/lib/types/nadaAc"
@@ -46,24 +44,19 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
     }
     const jstIssuedAcademicYear = getJstAcademicYear(new Date(tokenPayload.iat * 1000))
     const userCombinedGrade = +userProfileSource.combinedGrade as CombinedGrade
-    const userGrade = -~(~-userCombinedGrade % GRADE_SPAN) as Grade
+    const gradeDisplay = `${userCombinedGrade > GRADE_SPAN ? "高" : "中"}${-~(~-userCombinedGrade % GRADE_SPAN)}`
     const userCohort = calcCohortFromCombinedGrade(userCombinedGrade, jstIssuedAcademicYear)
-    const userStudentType =
-        userCombinedGrade > GRADE_SPAN
-            ? NadaAcWorkSpaceStudentType.Senior
-            : NadaAcWorkSpaceStudentType.Junior
     return {
         type: NadaAcWorkSpaceUserType.Student,
         profile: {
             cohort: userCohort,
             combinedGrade: userCombinedGrade,
-            grade: userGrade,
+            gradeDisplay,
             class: +userProfileSource.class,
             number: +userProfileSource.number,
             firstName: tokenPayload.given_name,
             lastName: userProfileSource.familyName,
             email: tokenPayload.email,
-            studentType: userStudentType,
         },
     }
 }

@@ -75,10 +75,7 @@ const nicknameTransformAction = v.transform((s: string) => s.trim() || null)
 const createSchema = <const T extends unknown[]>(arr: T) =>
     arr.length ? v.union(arr.map(v.literal)) : v.optional(v.unknown())
 
-type ProfileKeys = Exclude<
-    KeysOfUnion<NadaAcWorkSpaceUser["profile"]>,
-    "email" | "studentType" | "grade"
->
+type ProfileKeys = Exclude<KeysOfUnion<NadaAcWorkSpaceUser["profile"]>, "email" | "gradeDisplay">
 
 const coerceString = v.fallback(
     v.nullish(v.string(), ""),

@@ -584,7 +584,7 @@ const app = new Hono<Env>().get(
                     return [
                         {
                             name: "学年",
-                            value: `${userProfile.studentType}${userProfile.grade} (${userProfile.cohort}回生)`,
+                            value: `${userProfile.gradeDisplay} (${userProfile.cohort}回生)`,
                             inline: true,
                         },
                         {

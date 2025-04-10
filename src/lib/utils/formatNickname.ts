@@ -4,14 +4,12 @@ import { type NadaAcWorkSpaceUser, NadaAcWorkSpaceUserType } from "@/lib/types/n
 import { Warning } from "@/lib/utils/exceptions"
 
 export enum FormatSpecifier {
-    Grade = "g",
     CombinedGrade = "G",
     Class = "c",
     Number = "n",
     Cohort = "C",
     FirstName = "F",
     LastName = "L",
-    StudentType = "t",
     PercentSignEscape = "%",
 }
 
@@ -62,8 +60,6 @@ export const formatNickname = (
         switch (user.type) {
             case NadaAcWorkSpaceUserType.Student:
                 switch (formatSpecifier) {
-                    case FormatSpecifier.Grade:
-                        return `${user.profile.grade}`
                     case FormatSpecifier.CombinedGrade:
                         return `${user.profile.combinedGrade}`
                     case FormatSpecifier.Class:
@@ -72,8 +68,6 @@ export const formatNickname = (
                         return `${user.profile.number}`
                     case FormatSpecifier.Cohort:
                         return `${user.profile.cohort}`
-                    case FormatSpecifier.StudentType:
-                        return user.profile.studentType
                 }
                 break
             case NadaAcWorkSpaceUserType.Others:
