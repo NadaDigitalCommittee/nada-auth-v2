@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test"
 
-import { calcCohortFromCombinedGrade } from "../nadaAc"
+import { calcCohortFromGrade } from "../nadaAc"
 
-describe("calcCohortFromCombinedGrade", () => {
-    test("combinedGrade 1", () => {
-        expect(calcCohortFromCombinedGrade(1, 2024)).toBe(82)
+describe("calcCohortFromGrade", () => {
+    test("grade 1", () => {
+        expect(calcCohortFromGrade(1, 2024)).toBe(82)
     })
-    test("combinedGrade 4", () => {
-        expect(calcCohortFromCombinedGrade(4, 2024)).toBe(79)
+    test("grade 4", () => {
+        expect(calcCohortFromGrade(4, 2024)).toBe(79)
     })
 })

@@ -2,7 +2,7 @@ import type { Snowflake } from "discord-api-types/globals"
 import type { KeysOfUnion } from "type-fest"
 import * as v from "valibot"
 
-import { $CombinedGrade, $NadaAcWorkSpaceUserType } from "./nadaAc"
+import { $Grade, $NadaAcWorkSpaceUserType } from "./nadaAc"
 import type { UnknownValibotSchema } from "./utils"
 
 import type { NadaAcWorkSpaceUser } from "@/lib/types/nadaAc"
@@ -84,7 +84,7 @@ const coerceString = v.fallback(
 export const $Rule = v.pipe(
     v.tuple([
         v.pipe(coerceString, numberSplitAction, v.array($NadaAcWorkSpaceUserType)),
-        v.pipe(coerceString, numberSplitAction, v.array($CombinedGrade)),
+        v.pipe(coerceString, numberSplitAction, v.array($Grade)),
         v.pipe(coerceString, numberSplitAction),
         v.pipe(coerceString, numberSplitAction),
         v.pipe(coerceString, numberSplitAction),
@@ -103,7 +103,7 @@ export const $Rule = v.pipe(
                 schema: v.object({
                     type: $type,
                     profile: v.object({
-                        combinedGrade: $grade,
+                        grade: $grade,
                         cohort: $cohort,
                         class: $class,
                         number: $number,

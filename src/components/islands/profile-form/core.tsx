@@ -17,9 +17,9 @@ import {
     $NadaAcWorkSpacePartialStudentUser,
 } from "@/lib/schema/nadaAc"
 import { vFormFieldValidator } from "@/lib/schema/utils"
-import { type CombinedGrade, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
+import { type Grade, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { getJstAcademicYear } from "@/lib/utils/date"
-import { calcCohortFromCombinedGrade } from "@/lib/utils/nadaAc"
+import { calcCohortFromGrade } from "@/lib/utils/nadaAc"
 import { objectPaths } from "@/lib/utils/object"
 import { exclusiveRange } from "@/lib/utils/range"
 
@@ -139,11 +139,8 @@ export const Core = () => {
                         rules={{
                             required: "必須",
                         }}
-                        options={[...exclusiveRange(6, 0)].map((combinedGrade) => {
-                            const cohort = calcCohortFromCombinedGrade(
-                                combinedGrade as CombinedGrade,
-                                jstAcademicYear,
-                            )
+                        options={[...exclusiveRange(6, 0)].map((grade) => {
+                            const cohort = calcCohortFromGrade(grade as Grade, jstAcademicYear)
                             return {
                                 id: cohort,
                                 label: cohort,

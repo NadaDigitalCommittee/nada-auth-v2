@@ -186,7 +186,7 @@ const processSpreadsheet = async ({
         } else {
             const issue = failedRuleIssueStack.shift()
             if (!issue) return acc
-            // 失敗しうるのはv.array($NadaAcWorkSpaceUserType)とv.array($CombinedGrade)
+            // 失敗しうるのはv.array($NadaAcWorkSpaceUserType)とv.array($Grade)
             const [{ key: colIndex }, { key: indexInCell }] = issue.path as [
                 v.ArrayPathItem,
                 v.ArrayPathItem,
