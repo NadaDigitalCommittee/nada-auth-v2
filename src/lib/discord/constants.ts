@@ -16,8 +16,6 @@ export const sessionExpirationTtl = 300
 export const sessionExpirationTtlDev = 86400
 
 const guildConfigOptionMapBase = [
-    ["authenticated-role", "authenticatedRoleId"],
-    ["nickname", "nicknameFormat"],
     ["logging-channel", "loggingChannelId"],
     ["strict", "strictIntegrityCheck"],
 ] as const satisfies [string, keyof GuildConfig][]
@@ -27,8 +25,6 @@ export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
 )
 
 export const guildConfigInit = {
-    authenticatedRoleId: undefined,
-    nicknameFormat: undefined,
     loggingChannelId: undefined,
     strictIntegrityCheck: false,
 } satisfies GuildConfig

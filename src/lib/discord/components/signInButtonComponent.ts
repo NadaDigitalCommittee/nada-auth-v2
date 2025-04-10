@@ -7,20 +7,16 @@ import {
 } from "discord-api-types/v10"
 import { type Button, type ComponentHandler, Components } from "discord-hono"
 import { hc } from "hono/client"
-import * as v from "valibot"
 
 import {
-    guildConfigInit,
     requestTokenExpirationTtl,
     sessionExpirationTtl,
     sessionExpirationTtlDev,
 } from "../constants"
-import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { AppType } from "@/app"
 import type { Env } from "@/lib/schema/env"
-import { $GuildConfig, type Session } from "@/lib/schema/kvNamespaces"
-import { id } from "@/lib/utils/fp"
+import { type Session } from "@/lib/schema/kvNamespaces"
 import { generateSecret } from "@/lib/utils/secret"
 
 /**
@@ -37,47 +33,12 @@ export const component = {
  * @package
  */
 export const handler: ComponentHandler<Env, Button> = async (c) => {
-    const guildConfigRecord = c.env.GuildConfigs
     const authNRequestRecord = c.env.AuthNRequests
     const sessionRecord = c.env.Sessions
     const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     const { guild_id: guildId, member, token: interactionToken } = interaction
     const { user, roles } = member
-    const errorContext = {
-        guildId,
-        member,
-        path: "Components.signInButton.handler",
-    } as const satisfies ErrorContext
-    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(id)
-    if (rawGuildConfig instanceof Error) {
-        await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
-        return c
-            .ephemeral(true)
-            .res(
-                ":x: サーバーの設定データが正しい形式ではなかったため、このインタラクションに失敗しました。",
-            )
-    }
-    const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
-    if (!guildConfigParseResult.success) {
-        await reportErrorWithContext(
-            new v.ValiError(guildConfigParseResult.issues),
-            errorContext,
-            c.env,
-        )
-        return c
-            .ephemeral(true)
-            .res(
-                ":x: サーバーの設定データが正しい形式ではなかったため、このインタラクションに失敗しました。",
-            )
-    }
-    const guildConfig = guildConfigParseResult.output
-    if (
-        guildConfig.authenticatedRoleId &&
-        interaction.member.roles.includes(guildConfig.authenticatedRoleId)
-    ) {
-        return c.ephemeral(true).res(":person_tipping_hand: あなたはすでに認証が完了しています。")
-    }
     const userAuthNRequest = await authNRequestRecord.get(`userId:${user.id}`)
     if (userAuthNRequest && import.meta.env.PROD)
         return c.ephemeral(true).res(

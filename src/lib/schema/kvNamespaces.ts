@@ -6,8 +6,6 @@ import { $NadaAcWorkSpacePartialUser } from "./nadaAc"
 
 export const $GuildId = $Snowflake
 export const $GuildConfig = v.object({
-    authenticatedRoleId: v.optional($Snowflake),
-    nicknameFormat: v.optional(v.string()),
     loggingChannelId: v.optional($Snowflake),
     strictIntegrityCheck: v.optional(v.boolean()),
     _sheet: v.optional(

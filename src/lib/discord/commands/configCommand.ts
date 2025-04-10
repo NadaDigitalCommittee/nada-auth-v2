@@ -54,33 +54,6 @@ import { generateSecret } from "@/lib/utils/secret"
 
 const configSetOptions = [
     {
-        name: "authenticated-role",
-        description: "認証済みユーザーに付与するロール",
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-            {
-                name: "value",
-                description: "ロール。空にするとロールは付与されません。",
-                type: ApplicationCommandOptionType.Role,
-                required: false,
-            },
-        ],
-    },
-    {
-        name: "nickname",
-        description: "認証済みユーザーに設定するニックネームのフォーマット",
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-            {
-                name: "value",
-                description:
-                    "フォーマット指定子を含んだ文字列。空にするとニックネームは設定されません。",
-                type: ApplicationCommandOptionType.String,
-                required: false,
-            },
-        ],
-    },
-    {
         name: "logging-channel",
         description: "ログチャンネル",
         type: ApplicationCommandOptionType.Subcommand,
@@ -279,9 +252,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     switch (c.sub.string) {
         case "get":
             return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
-        case "set authenticated-role":
         case "set logging-channel":
-        case "set nickname":
         case "set strict": {
             const subcommandName = c.sub.string.split(" ").at(-1)
             const subcommandOptionOption = (
@@ -289,16 +260,6 @@ export const handler: CommandHandler<Env> = async (c) => {
             ).options[0]?.options?.[0]
             const subcommandOptionOptionValue = subcommandOptionOption?.value
             const guildConfigKvKey = guildConfigOptionNameToKvKeyMap.get(subcommandName)
-            {
-                // NOTE: バリデーション用スコープ
-                const authenticatedRoleValueIsEveryone =
-                    subcommandName === "authenticated-role" &&
-                    subcommandOptionOptionValue === guildId
-                if (authenticatedRoleValueIsEveryone)
-                    return c.res(
-                        `:warning: オプション \`${subcommandName}\` に everyone を指定することはできません。`,
-                    )
-            }
             if (guildConfig[guildConfigKvKey] === subcommandOptionOptionValue) {
                 return c.res({
                     content: ":person_shrugging: 変更がありません。",
