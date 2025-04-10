@@ -9,6 +9,11 @@ export const DISCORD_BUTTON_LABEL_MAX_LENGTH = 80
  */
 export const DISCORD_AVATAR_IMAGE_ALLOWED_MIME = /image\/(jpeg|png|gif)/
 
+/**
+ * https://discord.com/developers/docs/resources/webhook#execute-webhook-jsonform-params
+ */
+export const DISCORD_EMBEDS_MAX_COUNT = 10
+
 export const requestTokenExpirationTtl = 60
 
 export const sessionExpirationTtl = 300
@@ -16,8 +21,6 @@ export const sessionExpirationTtl = 300
 export const sessionExpirationTtlDev = 86400
 
 const guildConfigOptionMapBase = [
-    ["authenticated-role", "authenticatedRoleId"],
-    ["nickname", "nicknameFormat"],
     ["logging-channel", "loggingChannelId"],
     ["strict", "strictIntegrityCheck"],
 ] as const satisfies [string, keyof GuildConfig][]
@@ -27,8 +30,9 @@ export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
 )
 
 export const guildConfigInit = {
-    authenticatedRoleId: undefined,
-    nicknameFormat: undefined,
     loggingChannelId: undefined,
     strictIntegrityCheck: false,
 } satisfies GuildConfig
+
+export const loggingWebhookAvatarPath = "/assets/u1fa84_u1f525.webp"
+export const signInButtonWebhookAvatarPath = "/assets/u1fa84_u1f4e3.webp"

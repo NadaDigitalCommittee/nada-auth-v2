@@ -1,5 +1,6 @@
-import type { Split } from "type-fest"
+import type { ArraySlice, ArrayValues, Split } from "type-fest"
 
+import type { ArrayMap } from "./utils/array"
 import type { At } from "./utils/at"
 import type { Entries } from "./utils/entries"
 import type { FromEntries } from "./utils/fromEntries"
@@ -28,11 +29,39 @@ declare global {
     interface Array {
         at<T extends Array<unknown>, I extends number>(this: T, index: I): At<T, I>
         reverse<T extends Array<unknown>>(this: T): Reverse<T>
+        slice<T extends Array<unknown>, Start extends number = 0, End extends number = T["length"]>(
+            this: T,
+            start?: Start,
+            end?: End,
+        ): ArraySlice<T, Start, End>
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        map<T extends Array<unknown>, U>(
+            this: T,
+            callbackfn: (value: ArrayValues<T>, index: number, array: T) => U,
+            thisArg?: any,
+        ): ArrayMap<T, U>
+        /* eslint-enable @typescript-eslint/no-explicit-any */
     }
 
     interface ReadonlyArray {
         at<T extends ReadonlyArray<unknown>, I extends number>(this: T, index: I): At<[...T], I>
         reverse<T extends ReadonlyArray<unknown>>(this: T): Reverse<[...T]>
+        slice<
+            T extends ReadonlyArray<unknown>,
+            Start extends number = 0,
+            End extends number = T["length"],
+        >(
+            this: T,
+            start?: Start,
+            end?: End,
+        ): ArraySlice<T, Start, End>
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        map<T extends ReadonlyArray<unknown>, U>(
+            this: T,
+            callbackfn: (value: ArrayValues<T>, index: number, array: T) => U,
+            thisArg?: any,
+        ): ArrayMap<[...T], U>
+        /* eslint-enable @typescript-eslint/no-explicit-any */
     }
 
     interface ObjectConstructor {

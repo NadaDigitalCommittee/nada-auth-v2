@@ -28,10 +28,13 @@ export const $EnvVars = v.object({
     ]),
     GOOGLE_OAUTH_CLIENT_ID: v.string(),
     GOOGLE_OAUTH_CLIENT_SECRET: v.string(),
+    GOOGLE_PICKER_API_KEY: v.string(),
+    GOOGLE_CLOUD_PROJECT_NUMBER: v.string(),
     ALLOWED_EMAIL_DOMAINS: v.union([
         $AllowedEmailDomains,
         v.pipe(v.string(), v.transform(JSON.parse), $AllowedEmailDomains),
     ]),
+    ORIGIN: v.string(),
 })
 export interface Env extends EnvPrimitive {
     Bindings: { ASSETS: Fetcher } & KVNamespaces & v.InferOutput<typeof $EnvVars>

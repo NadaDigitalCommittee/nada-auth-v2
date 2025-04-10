@@ -1,5 +1,5 @@
 import { Box, Button, FormControlLabel, Stack, Tooltip, css } from "@mui/material"
-import { useEffect, useRef, useSyncExternalStore } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import {
     CheckboxElement,
     SelectElement,
@@ -11,14 +11,15 @@ import { FcGoogle } from "react-icons/fc"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
+import { Unselectable } from "@/components/Unselectable"
 import {
     $NadaAcWorkSpacePartialOtherUser,
     $NadaAcWorkSpacePartialStudentUser,
 } from "@/lib/schema/nadaAc"
 import { vFormFieldValidator } from "@/lib/schema/utils"
-import { type CombinedGrade, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
+import { type Grade, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { getJstAcademicYear } from "@/lib/utils/date"
-import { calcCohortFromCombinedGrade } from "@/lib/utils/nadaAc"
+import { calcCohortFromGrade } from "@/lib/utils/nadaAc"
 import { objectPaths } from "@/lib/utils/object"
 import { exclusiveRange } from "@/lib/utils/range"
 
@@ -53,7 +54,7 @@ type ProfileFormData = v.InferOutput<typeof $ProfileFormData>
 export const Core = () => {
     const {
         control,
-        formState: { isValid, isSubmitting, dirtyFields },
+        formState: { isValid, dirtyFields },
         trigger,
     } = useForm<ProfileFormData>({
         mode: "onChange",
@@ -64,6 +65,7 @@ export const Core = () => {
             isStudent: true,
         },
     })
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const jstAcademicYearRef = useRef<number | null>(null)
     // https://qiita.com/ssssota/items/51278dc5d51801dfb3fc
     const jstAcademicYear = useSyncExternalStore(
@@ -105,6 +107,9 @@ export const Core = () => {
             method="POST"
             name={name}
             noValidate
+            onSubmit={() => {
+                setIsSubmitting(true)
+            }}
         >
             <FormControlLabel
                 control={<CheckboxElement name="isStudent" control={control} />}
@@ -134,11 +139,8 @@ export const Core = () => {
                         rules={{
                             required: "必須",
                         }}
-                        options={[...exclusiveRange(6, 0)].map((combinedGrade) => {
-                            const cohort = calcCohortFromCombinedGrade(
-                                combinedGrade as CombinedGrade,
-                                jstAcademicYear,
-                            )
+                        options={[...exclusiveRange(6, 0)].map((grade) => {
+                            const cohort = calcCohortFromGrade(grade as Grade, jstAcademicYear)
                             return {
                                 id: cohort,
                                 label: cohort,
@@ -214,13 +216,9 @@ export const Core = () => {
                 leaveTouchDelay={2000}
                 title={
                     !isValid && (
-                        <span
-                            css={css`
-                                user-select: none;
-                            `}
-                        >
+                        <Unselectable>
                             入力されていない項目があるか、入力にエラーがあるため、続行できません。
-                        </span>
+                        </Unselectable>
                     )
                 }
             >
@@ -236,7 +234,9 @@ export const Core = () => {
                         startIcon={<FcGoogle />}
                         type="submit"
                         size="large"
-                        disabled={!isValid || isSubmitting}
+                        disabled={!isValid}
+                        loading={isSubmitting}
+                        loadingPosition="start"
                         tabIndex={0}
                         css={css`
                             text-transform: none;

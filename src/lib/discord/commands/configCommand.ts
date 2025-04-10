@@ -1,4 +1,4 @@
-import { type DiscordAPIError, REST } from "@discordjs/rest"
+import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
     isGuildInteraction,
@@ -8,13 +8,15 @@ import {
     type APIApplicationCommandInteractionDataBooleanOption,
     type APIApplicationCommandInteractionDataSubcommandGroupOption,
     type APIApplicationCommandSubcommandOption,
+    type APIButtonComponentWithURL,
     type APIEmbedField,
     ApplicationCommandOptionType,
     ApplicationCommandType,
+    ButtonStyle,
     ChannelType,
+    ComponentType,
     InteractionContextType,
     PermissionFlagsBits,
-    type RESTDeleteAPIWebhookResult,
     type RESTPatchAPIWebhookJSONBody,
     type RESTPatchAPIWebhookResult,
     type RESTPostAPIChannelWebhookJSONBody,
@@ -22,7 +24,9 @@ import {
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
     Routes,
 } from "discord-api-types/v10"
-import { type CommandHandler, Embed } from "discord-hono"
+import { type CommandHandler, Components, Embed } from "discord-hono"
+import { google } from "googleapis"
+import { hc } from "hono/client"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
@@ -30,6 +34,9 @@ import {
     guildConfigInit,
     guildConfigKvKeyToOptionNameMap,
     guildConfigOptionNameToKvKeyMap,
+    requestTokenExpirationTtl,
+    sessionExpirationTtl,
+    sessionExpirationTtlDev,
 } from "../constants"
 import {
     type CommandInteractionDataBasicOptionTypeToOptionValueType,
@@ -38,39 +45,14 @@ import {
     reportErrorWithContext,
 } from "../utils"
 
+import type { AppType } from "@/app"
 import type { Env } from "@/lib/schema/env"
-import { $GuildConfig, type GuildConfig } from "@/lib/schema/kvNamespaces"
+import { $GuildConfig, type GuildConfig, type SheetsOAuthSession } from "@/lib/schema/kvNamespaces"
 import type { MapKeyOf } from "@/lib/types/utils/map"
-import { shouldBeError } from "@/lib/utils/exceptions"
+import { id } from "@/lib/utils/fp"
+import { generateSecret } from "@/lib/utils/secret"
 
 const configSetOptions = [
-    {
-        name: "authenticated-role",
-        description: "認証済みユーザーに付与するロール",
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-            {
-                name: "value",
-                description: "ロール。空にするとロールは付与されません。",
-                type: ApplicationCommandOptionType.Role,
-                required: false,
-            },
-        ],
-    },
-    {
-        name: "nickname",
-        description: "認証済みユーザーに設定するニックネームのフォーマット",
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-            {
-                name: "value",
-                description:
-                    "フォーマット指定子を含んだ文字列。空にするとニックネームは設定されません。",
-                type: ApplicationCommandOptionType.String,
-                required: false,
-            },
-        ],
-    },
     {
         name: "logging-channel",
         description: "ログチャンネル",
@@ -137,6 +119,39 @@ export const command = {
                     name: "force",
                     description: "エラーを無視して初期化（既定値: False）",
                     type: ApplicationCommandOptionType.Boolean,
+                },
+            ],
+        },
+        {
+            name: "sheets",
+            description:
+                "スプレッドシートを連携すると、ロールやニックネームを自動で割り当てることができます。",
+            type: ApplicationCommandOptionType.SubcommandGroup,
+            options: [
+                {
+                    name: "init",
+                    description: "スプレッドシートを新規に作成し、アプリにアクセス権限を与えます。",
+                    type: ApplicationCommandOptionType.Subcommand,
+                    options: [],
+                },
+                {
+                    name: "show",
+                    description: "連携しているスプレッドシートを表示します。",
+                    type: ApplicationCommandOptionType.Subcommand,
+                    options: [],
+                },
+                {
+                    name: "revoke",
+                    description: "スプレッドシートとの連携を解除します。",
+                    type: ApplicationCommandOptionType.Subcommand,
+                    options: [
+                        {
+                            type: ApplicationCommandOptionType.Boolean,
+                            name: "hard",
+                            description: "ファイルも破棄する（既定値: False）",
+                            required: false,
+                        },
+                    ],
                 },
             ],
         },
@@ -211,7 +226,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         subcommandString: c.sub.string,
     } as const satisfies ErrorContext
     // NOTE: 型と値が乖離するのでジェネリクスはつけない
-    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(shouldBeError)
+    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(id)
     // TODO: エラーメッセージを定数管理
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {
@@ -237,9 +252,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     switch (c.sub.string) {
         case "get":
             return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
-        case "set authenticated-role":
         case "set logging-channel":
-        case "set nickname":
         case "set strict": {
             const subcommandName = c.sub.string.split(" ").at(-1)
             const subcommandOptionOption = (
@@ -247,16 +260,6 @@ export const handler: CommandHandler<Env> = async (c) => {
             ).options[0]?.options?.[0]
             const subcommandOptionOptionValue = subcommandOptionOption?.value
             const guildConfigKvKey = guildConfigOptionNameToKvKeyMap.get(subcommandName)
-            {
-                // NOTE: バリデーション用スコープ
-                const authenticatedRoleValueIsEveryone =
-                    subcommandName === "authenticated-role" &&
-                    subcommandOptionOptionValue === guildId
-                if (authenticatedRoleValueIsEveryone)
-                    return c.res(
-                        `:warning: オプション \`${subcommandName}\` に everyone を指定することはできません。`,
-                    )
-            }
             if (guildConfig[guildConfigKvKey] === subcommandOptionOptionValue) {
                 return c.res({
                     content: ":person_shrugging: 変更がありません。",
@@ -278,11 +281,8 @@ export const handler: CommandHandler<Env> = async (c) => {
                                 channel_id: channelOptionValue,
                             } satisfies RESTPatchAPIWebhookJSONBody,
                         })
-                        .catch(shouldBeError)) as
-                        | RESTPatchAPIWebhookResult
-                        | DiscordAPIError
-                        | TypeError
-                    if (webhookModificationResult instanceof Error) {
+                        .catch(id)) as RESTPatchAPIWebhookResult | DiscordAPIError
+                    if (webhookModificationResult instanceof DiscordAPIError) {
                         await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
                         return c.res(
                             `:x: Webhook <@${loggingWebhook.id}> を更新できませんでした。\n理由: \n>>> ${webhookModificationResult.message}`,
@@ -291,13 +291,10 @@ export const handler: CommandHandler<Env> = async (c) => {
                     guildConfig._loggingWebhook = webhookModificationResult
                 } else if (isPresent(loggingWebhook) && !isPresent(channelOptionValue)) {
                     // すでに webhook が作成されていて、それを削除する場合
-                    const webhookDeletionResult = (await rest
+                    const webhookDeletionResult = await rest
                         .delete(Routes.webhook(loggingWebhook.id))
-                        .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-                        | RESTDeleteAPIWebhookResult
-                        | DiscordAPIError
-                        | TypeError
-                    if (webhookDeletionResult instanceof Error) {
+                        .catch(id)
+                    if (webhookDeletionResult instanceof DiscordAPIError) {
                         await reportErrorWithContext(webhookDeletionResult, errorContext, c.env)
                         return c.res(
                             `:x: Webhook <@${loggingWebhook.id}> を削除できませんでした。\n理由: \n>>> ${webhookDeletionResult.message}`,
@@ -312,11 +309,8 @@ export const handler: CommandHandler<Env> = async (c) => {
                                 name: "nada-auth logging",
                             } satisfies RESTPostAPIChannelWebhookJSONBody,
                         })
-                        .catch(shouldBeError)) as
-                        | RESTPostAPIChannelWebhookResult
-                        | DiscordAPIError
-                        | TypeError
-                    if (webhookCreationResult instanceof Error) {
+                        .catch(id)) as RESTPostAPIChannelWebhookResult | DiscordAPIError
+                    if (webhookCreationResult instanceof DiscordAPIError) {
                         await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
                         return c.res(
                             `:x: チャンネル <#${channelOptionValue}> に Webhook を作成できませんでした。\n理由: \n>>> ${webhookCreationResult.message}`,
@@ -352,53 +346,142 @@ export const handler: CommandHandler<Env> = async (c) => {
             const forceReset = configResetOptions[0]?.value ?? false
             // TODO: このあたり共通化する
             const loggingWebhook = guildConfig._loggingWebhook
-            const loggingWebhookDeletionResult =
-                loggingWebhook &&
-                ((await rest.delete(Routes.webhook(loggingWebhook.id)).catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-                    | RESTDeleteAPIWebhookResult
-                    | DiscordAPIError
-                    | TypeError)
-            if (!forceReset && loggingWebhook && loggingWebhookDeletionResult instanceof Error) {
-                await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
-                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
+            if (loggingWebhook) {
+                const loggingWebhookDeletionResult = await rest
+                    .delete(Routes.webhook(loggingWebhook.id))
+                    .catch(id)
+                if (!forceReset && loggingWebhookDeletionResult instanceof DiscordAPIError) {
+                    await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
+                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
 :arrow_right_hook: Webhook <@${loggingWebhook.id}> を削除することができませんでした。
 理由:
 >>> ${loggingWebhookDeletionResult.message}`)
+                }
             }
             const signInButtonWebhook = guildConfig._signInButtonWebhook
-            const signInButtonWebhookDeletionResult =
-                signInButtonWebhook &&
-                ((await rest
+            if (signInButtonWebhook) {
+                const signInButtonWebhookDeletionResult = await rest
                     .delete(Routes.webhook(signInButtonWebhook.id))
-                    .catch(shouldBeError)) as  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-                    | RESTDeleteAPIWebhookResult
-                    | DiscordAPIError
-                    | TypeError)
-            if (
-                !forceReset &&
-                signInButtonWebhook &&
-                signInButtonWebhookDeletionResult instanceof Error
-            ) {
-                await reportErrorWithContext(signInButtonWebhookDeletionResult, errorContext, c.env)
-                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
+                    .catch(id)
+                if (!forceReset && signInButtonWebhookDeletionResult instanceof DiscordAPIError) {
+                    await reportErrorWithContext(
+                        signInButtonWebhookDeletionResult,
+                        errorContext,
+                        c.env,
+                    )
+                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
 :arrow_right_hook: Webhook <@${signInButtonWebhook.id}> を削除することができませんでした。
 理由:
 >>> ${signInButtonWebhookDeletionResult.message}`)
+                }
             }
-            const guildConfigDeletionResult = await guildConfigRecord
-                .delete(guildId)
-                .catch(shouldBeError)
-            if (guildConfigDeletionResult instanceof Error) {
-                await reportErrorWithContext(guildConfigDeletionResult, errorContext, c.env)
-                return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: データを削除できませんでした。`)
-            }
+            await guildConfigRecord.delete(guildId)
             return c.res({
                 content: ":white_check_mark: サーバー設定が初期化されました。",
                 embeds: [generateConfigTableEmbed(guildConfigInit)],
             })
         }
-
+        case "sheets init": {
+            if (guildConfig._sheet?.spreadsheetId) {
+                return c.res(
+                    `:warning: このサーバーには、すでに[連携されているスプレッドシート](https://docs.google.com/spreadsheets/d/${guildConfig._sheet.spreadsheetId})があります。上書きしようとしている場合は、先にこれを破棄してください。`,
+                )
+            }
+            const interactionToken = c.interaction.token
+            const requestToken = generateSecret(64)
+            const sessionId = generateSecret(64)
+            const session: SheetsOAuthSession = { guildId, interactionToken }
+            await c.env.AuthNRequests.put(`requestToken:${requestToken}`, sessionId, {
+                expirationTtl: requestTokenExpirationTtl,
+            })
+            await c.env.Sessions.put(sessionId, JSON.stringify(session), {
+                expirationTtl: import.meta.env.DEV ? sessionExpirationTtlDev : sessionExpirationTtl,
+            })
+            const honoClient = hc<AppType>(c.env.ORIGIN)
+            const oAuthUrl = honoClient.oauth.sheets.$url({ query: { token: requestToken } })
+            const oAuthButtonLink = {
+                label: "アクセスを許可",
+                type: ComponentType.Button,
+                style: ButtonStyle.Link,
+                emoji: c.env.DISCORD_APPLICATION_EMOJIS.g_logo,
+                url: oAuthUrl.href,
+            } as const satisfies APIButtonComponentWithURL
+            return c.ephemeral(true).res({
+                content: `:person_tipping_hand: アクセス許可が必要です。下のボタンからアプリにアクセス権を与えてください。
+発行されたリンクは ${requestTokenExpirationTtl} 秒間、1 度だけ有効です。`,
+                components: new Components().row(oAuthButtonLink),
+            })
+        }
+        case "sheets show": {
+            if (!guildConfig._sheet?.spreadsheetId) {
+                return c.res(":warning: 連携されているスプレッドシートがありません。")
+            }
+            const sheetButtonLink = {
+                label: "スプレッドシートを開く",
+                type: ComponentType.Button,
+                style: ButtonStyle.Link,
+                url: `https://docs.google.com/spreadsheets/d/${guildConfig._sheet.spreadsheetId}`,
+            } as const satisfies APIButtonComponentWithURL
+            return c.res({
+                components: new Components().row(sheetButtonLink),
+            })
+        }
+        case "sheets revoke": {
+            if (!guildConfig._sheet?.spreadsheetId) {
+                return c.res(":warning: 連携されているスプレッドシートがありません。")
+            }
+            const [{ options: sheetsRevokeOptions }] = (
+                options[0] as APIApplicationCommandInteractionDataSubcommandGroupOption
+            ).options as [
+                {
+                    name: string
+                    type: ApplicationCommandOptionType.Subcommand
+                    options: [APIApplicationCommandInteractionDataBooleanOption] | []
+                },
+            ]
+            const hard = sheetsRevokeOptions[0]?.value ?? false
+            if (hard) {
+                const oAuth2Client = new google.auth.OAuth2({
+                    clientId: c.env.GOOGLE_OAUTH_CLIENT_ID,
+                    clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
+                    credentials: {
+                        access_token: guildConfig._sheet.accessToken,
+                        refresh_token: guildConfig._sheet.refreshToken,
+                    },
+                })
+                if (guildConfig._sheet.accessTokenExpiry <= Date.now()) {
+                    const accessTokenRefreshResponse = await oAuth2Client
+                        .refreshAccessToken()
+                        .catch(id<unknown, Error>)
+                    if (accessTokenRefreshResponse instanceof Error) {
+                        return c.res(
+                            ":x: スプレッドシートにアクセスするための資格情報を取得できませんでした。",
+                        )
+                    }
+                    const { credentials } = accessTokenRefreshResponse
+                    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+                    guildConfig._sheet.accessToken = credentials.access_token!
+                    guildConfig._sheet.accessTokenExpiry = credentials.expiry_date!
+                    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+                }
+                const drive = google.drive({ version: "v2", auth: oAuth2Client })
+                const spreadsheetDeleteResponse = await drive.files
+                    .trash({
+                        fileId: guildConfig._sheet.spreadsheetId,
+                        supportsAllDrives: true,
+                    })
+                    .catch(id<unknown, Error>)
+                if (spreadsheetDeleteResponse instanceof Error) {
+                    await reportErrorWithContext(spreadsheetDeleteResponse, errorContext, c.env)
+                    return c.res(":x: ファイルをごみ箱に移動することができませんでした。")
+                }
+            }
+            delete guildConfig._sheet.spreadsheetId
+            await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
+            return c.res(
+                `:white_check_mark: ${hard ? "ファイルがごみ箱に移動され、" : ""}スプレッドシートとの連携が解除されました。`,
+            )
+        }
         default:
             return c.res(":x: このサブコマンドはサポートされていません。")
     }

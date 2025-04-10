@@ -1,5 +1,6 @@
-export const shouldBeError = (e: unknown): Error =>
-    e instanceof Error ? e : new TypeError(`Cannot throw a non-throwable type '${typeof e}'`)
+import { constant } from "./fp"
+
+export const orNull = constant(null)
 
 export abstract class Warning {
     message: string

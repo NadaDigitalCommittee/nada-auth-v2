@@ -1,12 +1,20 @@
-import { Box, Divider, Stack, css } from "@mui/material"
+import { Box, Divider, Stack, Step, StepLabel, Stepper, Typography, css } from "@mui/material"
 import type { ReactNode } from "react"
 
-import { AppStepper } from "./AppStepper"
+export type AppStep = {
+    name: string
+    nameVerbose: string
+}
 
 export const App = ({
+    appSteps,
     activeStep,
     children,
-}: Pick<Parameters<typeof AppStepper>[0], "activeStep"> & { children: ReactNode }) => (
+}: {
+    appSteps: AppStep[]
+    activeStep: number
+    children: ReactNode
+}) => (
     <Box
         css={css`
             display: grid;
@@ -36,7 +44,34 @@ export const App = ({
             spacing={2}
             component="main"
         >
-            <AppStepper activeStep={activeStep} />
+            <Typography
+                variant="h1"
+                css={css`
+                    font-size: 1.5rem;
+                    font-weight: normal;
+                `}
+            >
+                {appSteps[activeStep]?.nameVerbose}
+            </Typography>
+            <Stepper
+                activeStep={activeStep}
+                alternativeLabel
+                sx={{
+                    width: "100%",
+                }}
+            >
+                {appSteps.map((step) => (
+                    <Step key={step.name}>
+                        <StepLabel
+                            css={css`
+                                white-space: nowrap;
+                            `}
+                        >
+                            {step.name}
+                        </StepLabel>
+                    </Step>
+                ))}
+            </Stepper>
             <Divider flexItem />
             {children}
         </Stack>

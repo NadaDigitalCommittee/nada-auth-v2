@@ -1,4 +1,4 @@
-import { type DiscordAPIError, REST } from "@discordjs/rest"
+import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
     isGuildInteraction,
@@ -30,7 +30,8 @@ import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig } from "@/lib/schema/kvNamespaces"
-import { shouldBeError } from "@/lib/utils/exceptions"
+import { orNull } from "@/lib/utils/exceptions"
+import { id } from "@/lib/utils/fp"
 import { generateDataUrlFromHttpUrl } from "@/lib/utils/misc"
 
 /**
@@ -104,7 +105,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     )
     if (!optionValues.channel)
         return c.res(":x: 必須オプション `channel` の形式が不正であるか、与えられませんでした。")
-    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(shouldBeError)
+    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(id)
     if (rawGuildConfig instanceof Error) {
         await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
         return c.res(
@@ -130,8 +131,8 @@ export const handler: CommandHandler<Env> = async (c) => {
         return c.res(":x: 添付ファイルを取得できませんでした。")
     const fetchAvatarDataUrl = async () => {
         if (!avatarAttachment) return null
-        const dataUrl = await generateDataUrlFromHttpUrl(avatarAttachment.url).catch(shouldBeError)
-        if (dataUrl instanceof Error) return new Error(":x: 添付ファイルを取得できませんでした。")
+        const dataUrl = await generateDataUrlFromHttpUrl(avatarAttachment.url).catch(orNull)
+        if (!dataUrl) return new Error(":x: 添付ファイルを取得できませんでした。")
         if (!new RegExp(`data:${DISCORD_AVATAR_IMAGE_ALLOWED_MIME.source}`).test(dataUrl))
             return new Error(
                 ":warning: アバター画像としてこの形式のファイルを設定することはできません。",
@@ -150,8 +151,8 @@ export const handler: CommandHandler<Env> = async (c) => {
             .patch(Routes.webhook(signInButtonWebhook.id), {
                 body: webhookJsonBody satisfies RESTPatchAPIWebhookJSONBody,
             })
-            .catch(shouldBeError)) as RESTPatchAPIWebhookResult | DiscordAPIError | TypeError
-        if (webhookModificationResult instanceof Error) {
+            .catch(id)) as RESTPatchAPIWebhookResult | DiscordAPIError
+        if (webhookModificationResult instanceof DiscordAPIError) {
             await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
             return c.res(
                 `:x: Webhook <@${signInButtonWebhook.id}> を更新することができませんでした。\
@@ -168,8 +169,8 @@ export const handler: CommandHandler<Env> = async (c) => {
             .post(Routes.channelWebhooks(optionValues.channel), {
                 body: webhookJsonBody satisfies RESTPostAPIChannelWebhookJSONBody,
             })
-            .catch(shouldBeError)) as RESTPatchAPIWebhookResult | DiscordAPIError | TypeError
-        if (webhookCreationResult instanceof Error) {
+            .catch(id)) as RESTPatchAPIWebhookResult | DiscordAPIError
+        if (webhookCreationResult instanceof DiscordAPIError) {
             await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
             return c.res(
                 `:x: チャンネル <#${optionValues.channel}> に Webhook を作成することができませんでした。理由: \n>>> ${webhookCreationResult.message}`,

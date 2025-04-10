@@ -4,8 +4,8 @@ import type { H } from "hono/types"
 import type { StatusCode } from "hono/utils/http-status"
 
 import { api } from "./api"
-import { authn } from "./authn"
 import { invite } from "./invite"
+import { oauth } from "./oauth"
 
 import { discordRest } from "@/lib/middleware/discordRest"
 import { envVarsValidator } from "@/lib/middleware/envVarsValidator"
@@ -32,7 +32,7 @@ const app = new Hono()
     .use(secureHeaders())
     .route("/api", api)
     .route("/invite", invite)
-    .route("/authn", authn)
+    .route("/oauth", oauth)
     .get("/robots.txt", assetsHandler)
     .get("/assets/*", assetsHandler)
     .get("/static/*", assetsHandler)

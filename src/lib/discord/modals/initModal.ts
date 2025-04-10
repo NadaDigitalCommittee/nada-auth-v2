@@ -1,10 +1,9 @@
-import { CDN, type DiscordAPIError, REST } from "@discordjs/rest"
+import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
 import { isGuildInteraction } from "discord-api-types/utils"
 import {
     type APIModalInteractionResponseCallbackData,
     ComponentType,
     type RESTPostAPIWebhookWithTokenJSONBody,
-    type RESTPostAPIWebhookWithTokenResult,
     Routes,
     TextInputStyle,
 } from "discord-api-types/v10"
@@ -13,16 +12,12 @@ import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
 import { Components as CustomComponents } from ".."
-import { guildConfigInit } from "../constants"
-import {
-    type ErrorContext,
-    reportErrorWithContext,
-    signInButtonWebhookDefaultAvatarUrlOf,
-} from "../utils"
+import { guildConfigInit, signInButtonWebhookAvatarPath } from "../constants"
+import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig } from "@/lib/schema/kvNamespaces"
-import { shouldBeError } from "@/lib/utils/exceptions"
+import { id } from "@/lib/utils/fp"
 
 /**
  * @package
@@ -84,7 +79,7 @@ export const handler: ModalHandler<
     } as const satisfies ErrorContext
 
     const guildConfigRecord = c.env.GuildConfigs
-    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(shouldBeError)
+    const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(id)
     if (rawGuildConfig instanceof Error) {
         await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
         return c.res(
@@ -108,21 +103,20 @@ export const handler: ModalHandler<
         return c.res(
             ":warning: Webhook が見つかりませんでした。再度 /init コマンドを実行してみてください。",
         )
-    /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-    const webhookExecutionResult = (await rest
+    const webhookExecutionResult = await rest
         .post(Routes.webhook(signInButtonWebhook.id, signInButtonWebhook.token), {
             body: {
                 avatar_url: signInButtonWebhook.avatar
                     ? new CDN().avatar(signInButtonWebhook.id, signInButtonWebhook.avatar)
-                    : signInButtonWebhookDefaultAvatarUrlOf(c.req.url).href,
+                    : new URL(signInButtonWebhookAvatarPath, c.env.ORIGIN).href,
                 content: messageContent,
                 components: new Components()
                     .row({ ...CustomComponents.signInButton.component, label: buttonLabel })
                     .toJSON(),
             } satisfies RESTPostAPIWebhookWithTokenJSONBody,
         })
-        .catch(shouldBeError)) as RESTPostAPIWebhookWithTokenResult | DiscordAPIError | TypeError
-    if (webhookExecutionResult instanceof Error) {
+        .catch(id)
+    if (webhookExecutionResult instanceof DiscordAPIError) {
         await reportErrorWithContext(webhookExecutionResult, errorContext, c.env)
         return c.res(
             `:x: メッセージを送信できませんでした。理由: \n>>> ${webhookExecutionResult.message}`,

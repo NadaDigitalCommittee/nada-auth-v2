@@ -1,7 +1,8 @@
 {
     "name": "nada-auth-v2",
     "scripts": {
-        "dev": "concurrently --kill-others --names \"esbuild,wrangler\" \"bun build:client --watch --dev\" \"wrangler dev --live-reload --env=dev\"",
+        "dev": "concurrently --kill-others --names \"esbuild,wrangler\" \"bun build:client --watch --dev\" \"wrangler dev --live-reload --env=dev --port=8787\"",
+        "ngrok": "bun --env-file=./.dev.vars exec \"ngrok http --url=\\$NGROK_URL 8787\"",
         "deploy": "wrangler deploy --minify",
         "build:client": "bun run esbuild.config.ts",
         "register": "bun --env-file=./.prod.vars run --define ReadonlyMap=\"Map\" ./src/scripts/register.ts",
@@ -33,6 +34,7 @@
         "discord-api-types": "^0.37.119",
         "discord-hono": "^0.16.4",
         "google-auth-library": "^9.15.1",
+        "googleapis": "^148.0.0",
         "hono": "^4.7.5",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
@@ -46,6 +48,8 @@
         "@eslint/js": "^9.24.0",
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
         "@types/bun": "^1.2.9",
+        "@types/gapi": "^0.0.47",
+        "@types/google.picker": "^0.0.50",
         "@types/react": "^19.1.0",
         "@types/react-dom": "^19.1.1",
         "concurrently": "^9.1.2",
@@ -69,6 +73,7 @@
     },
     "patchedDependencies": {
         "discord-api-types@0.37.119": "patches/discord-api-types@0.37.119.patch",
-        "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch"
+        "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch",
+        "@types/google.picker@0.0.50": "patches/@types%2Fgoogle.picker@0.0.50.patch"
     }
 }
