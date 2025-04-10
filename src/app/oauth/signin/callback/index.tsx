@@ -73,7 +73,22 @@ const processSpreadsheet = async ({
         },
     })
     if (guildConfig._sheet.accessTokenExpiry <= Date.now()) {
-        const { credentials } = await oAuth2Client.refreshAccessToken()
+        const accessTokenRefreshResponse = await oAuth2Client
+            .refreshAccessToken()
+            .catch(id<unknown, Error>)
+        if (accessTokenRefreshResponse instanceof Error) {
+            await logger.error({
+                title: "Failed to retrieve spreadsheet content",
+                fields: [
+                    {
+                        name: "Reason",
+                        value: `Failed to refresh access token`,
+                    },
+                ],
+            })
+            return
+        }
+        const { credentials } = accessTokenRefreshResponse
         /* eslint-disable @typescript-eslint/no-non-null-assertion */
         guildConfig._sheet.accessToken = credentials.access_token!
         guildConfig._sheet.accessTokenExpiry = credentials.expiry_date!

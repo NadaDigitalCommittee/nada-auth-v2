@@ -450,7 +450,15 @@ export const handler: CommandHandler<Env> = async (c) => {
                     },
                 })
                 if (guildConfig._sheet.accessTokenExpiry <= Date.now()) {
-                    const { credentials } = await oAuth2Client.refreshAccessToken()
+                    const accessTokenRefreshResponse = await oAuth2Client
+                        .refreshAccessToken()
+                        .catch(id<unknown, Error>)
+                    if (accessTokenRefreshResponse instanceof Error) {
+                        return c.res(
+                            ":x: スプレッドシートにアクセスするための資格情報を取得できませんでした。",
+                        )
+                    }
+                    const { credentials } = accessTokenRefreshResponse
                     /* eslint-disable @typescript-eslint/no-non-null-assertion */
                     guildConfig._sheet.accessToken = credentials.access_token!
                     guildConfig._sheet.accessTokenExpiry = credentials.expiry_date!
