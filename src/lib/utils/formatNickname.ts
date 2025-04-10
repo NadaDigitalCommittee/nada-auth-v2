@@ -4,12 +4,12 @@ import { type NadaAcWorkSpaceUser, NadaAcWorkSpaceUserType } from "@/lib/types/n
 import { Warning } from "@/lib/utils/exceptions"
 
 export enum FormatSpecifier {
-    Grade = "G",
+    Grade = "g",
+    Cohort = "C",
     Class = "c",
     Number = "n",
-    Cohort = "C",
-    FirstName = "F",
-    LastName = "L",
+    FirstName = "f",
+    LastName = "l",
     PercentSignEscape = "%",
 }
 
