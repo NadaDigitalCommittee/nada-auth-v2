@@ -3,8 +3,7 @@ import type { sheets_v4 } from "googleapis"
 export const sheetId = 0
 export const valuesRangeA1 = "A2:I"
 
-// eslint-disable-next-line @typescript-eslint/no-misused-spread
-const BASE26_DIGITS = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"]
+const BASE26_DIGITS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const BASE = 26
 const indexToA1Digits = (n: number, acc: number[] = []): string[] => {
     const digits = n < BASE ? [] : indexToA1Digits(~-(n / BASE), acc)
