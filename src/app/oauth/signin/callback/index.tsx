@@ -77,7 +77,7 @@ const processSpreadsheet = async ({
             .refreshAccessToken()
             .catch(id<unknown, Error>)
         if (accessTokenRefreshResponse instanceof Error) {
-            await logger.error({
+            logger.error({
                 title: "Failed to retrieve spreadsheet content",
                 fields: [
                     {
@@ -103,7 +103,7 @@ const processSpreadsheet = async ({
         })
         .catch(id<unknown, Error>)
     if (spreadsheetMeta instanceof Error) {
-        await logger.error({
+        logger.error({
             title: "Failed to retrieve spreadsheet content",
             fields: [
                 {
@@ -118,7 +118,7 @@ const processSpreadsheet = async ({
         (s) => s.properties?.sheetId === targetSheetId,
     )?.properties?.title
     if (!sheetName) {
-        await logger.error({
+        logger.error({
             title: "Failed to retrieve spreadsheet content",
             fields: [
                 {
@@ -137,7 +137,7 @@ const processSpreadsheet = async ({
         })
         .catch(id<unknown, Error>)
     if (spreadsheetValuesGetResponse instanceof Error) {
-        await logger.error({
+        logger.error({
             title: "Failed to retrieve spreadsheet content",
             fields: [
                 {
@@ -163,7 +163,7 @@ const processSpreadsheet = async ({
         sheetValues,
     )
     if (!sheetValuesParseResult.success) {
-        await logger.error({
+        logger.error({
             title: "Failed to parse spreadsheet contents",
             fields: [
                 {
@@ -205,7 +205,7 @@ const processSpreadsheet = async ({
             },
             [[], []],
         )
-        await logger.error({
+        logger.error({
             title: `Parsing matcher rules completed with errors. Skipping row(s): ${rowIndices.join(", ")}`,
             fields: [
                 {
@@ -222,7 +222,7 @@ const processSpreadsheet = async ({
     if (nicknameFormat) {
         const nicknameFormatResult = formatNickname(nicknameFormat, workspaceUser)
         if (nicknameFormatResult.warnings.length) {
-            await logger.warn({
+            logger.warn({
                 title: "Formatting nickname completed with warnings",
                 fields: [
                     {
@@ -240,8 +240,8 @@ const processSpreadsheet = async ({
                     nick: nicknameFormatResult.formatted,
                 } satisfies RESTPatchAPIGuildMemberJSONBody,
             })
-            .catch(async (e: unknown) => {
-                await logger.error({
+            .catch((e: unknown) => {
+                logger.error({
                     title: "Failed to modify nickname",
                     fields: [
                         {
@@ -277,7 +277,7 @@ const processSpreadsheet = async ({
             },
             [[], []],
         )
-        await logger.error({
+        logger.error({
             title: `Parsing roles completed with errors. Skipping row(s): ${rowIndices.join(", ")}`,
             fields: [
                 {
@@ -305,8 +305,8 @@ const processSpreadsheet = async ({
                 roles: [...userRoles],
             } satisfies RESTPatchAPIGuildMemberJSONBody,
         })
-        .catch(async (e: unknown) => {
-            await logger.error({
+        .catch((e: unknown) => {
+            logger.error({
                 title: "Failed to modify roles",
                 fields: [
                     {
@@ -472,7 +472,7 @@ const app = new Hono<Env>().get(
             c.status(401)
             return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
         }
-        const logger = new Logger({
+        await using logger = new Logger({
             context: c,
             webhook: guildConfig._loggingWebhook,
             author: session.user,
@@ -483,21 +483,17 @@ const app = new Hono<Env>().get(
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            await logger
-                .error({
-                    title: "Failed authentication",
-                    fields: [
-                        {
-                            name: "Reason",
-                            value: "Email domain not allowed",
-                        },
-                    ],
-                })
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                })
+            logger.error({
+                title: "Failed authentication",
+                fields: [
+                    {
+                        name: "Reason",
+                        value: "Email domain not allowed",
+                    },
+                ],
+            })
             c.status(401)
-            return c.render(
+            return await c.render(
                 <ErrorAlert title="Unauthorized">
                     学内のユーザーであることを確認できませんでした。
                 </ErrorAlert>,
@@ -510,10 +506,7 @@ const app = new Hono<Env>().get(
         if (userProfileValidationResult?.success !== true) {
             const logMessage = `\`\`\`${
                 userProfileValidationResult?.issues
-                    .map(
-                        (issue) =>
-                            `${issue.message} (path: ${issue.path?.map((path) => String(path.key)).join(" > ") || "<none>"})`,
-                    )
+                    .map((issue) => `${issue.message}\n  at ${v.getDotPath(issue) ?? "<none>"}\n`)
                     .join("\n") ?? "User bypassed the profile entry process."
             }\`\`\``
             if (guildConfig.strictIntegrityCheck === true) {
@@ -521,43 +514,35 @@ const app = new Hono<Env>().get(
                     content: AUTHN_FAILED_MESSAGE,
                     components: [],
                 })
-                await logger
-                    .error({
-                        title: "Failed authentication",
-                        fields: [
-                            {
-                                name: "Reason",
-                                value: "Profile Information Mismatch",
-                            },
-                            {
-                                name: "Details",
-                                value: logMessage,
-                            },
-                        ],
-                    })
-                    .catch(async (e: unknown) => {
-                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    })
+                logger.error({
+                    title: "Failed authentication",
+                    fields: [
+                        {
+                            name: "Reason",
+                            value: "Profile Information Mismatch",
+                        },
+                        {
+                            name: "Details",
+                            value: logMessage,
+                        },
+                    ],
+                })
                 c.status(401)
-                return c.render(
+                return await c.render(
                     <ErrorAlert title="Unauthorized">
                         入力されたプロフィール情報とアカウント情報が一致しません。
                     </ErrorAlert>,
                 )
             } else {
-                await logger
-                    .warn({
-                        title: "Warnings while authentication",
-                        fields: [
-                            {
-                                name: "Details",
-                                value: logMessage,
-                            },
-                        ],
-                    })
-                    .catch(async (e: unknown) => {
-                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    })
+                logger.warn({
+                    title: "Warnings while authentication",
+                    fields: [
+                        {
+                            name: "Details",
+                            value: logMessage,
+                        },
+                    ],
+                })
             }
         }
         await processSpreadsheet({
@@ -604,19 +589,15 @@ const app = new Hono<Env>().get(
                     return commonEmbedFields
             }
         })()
-        await logger
-            .info({
-                fields: embedFields,
-            })
-            .catch(async (e: unknown) => {
-                if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-            })
+        logger.info({
+            fields: embedFields,
+        })
 
         await editOriginal({
             content: ":white_check_mark: 認証が完了しました。",
             components: [],
         })
-        return c.render(<SuccessAlert>認証が完了しました。</SuccessAlert>)
+        return await c.render(<SuccessAlert>認証が完了しました。</SuccessAlert>)
     },
 )
 

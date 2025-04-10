@@ -9,6 +9,11 @@ export const DISCORD_BUTTON_LABEL_MAX_LENGTH = 80
  */
 export const DISCORD_AVATAR_IMAGE_ALLOWED_MIME = /image\/(jpeg|png|gif)/
 
+/**
+ * https://discord.com/developers/docs/resources/webhook#execute-webhook-jsonform-params
+ */
+export const DISCORD_EMBEDS_MAX_COUNT = 10
+
 export const requestTokenExpirationTtl = 60
 
 export const sessionExpirationTtl = 300
