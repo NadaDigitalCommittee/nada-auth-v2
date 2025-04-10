@@ -11,11 +11,12 @@ const patchedPackageList = Object.keys(patchedDependencies)
 
 const createInitMessage = (s: string) => `Checking patch ${s} `
 const initMessageMaxLength = Math.max(...patchedPackageList.map((s) => createInitMessage(s).length))
+const patchedDependencyRegex = /^(.+)@([^@]+)$/
 try {
     patchedPackageList.forEach((patchedPackage) => {
         console.write(createInitMessage(patchedPackage).padEnd(initMessageMaxLength + 3, "."))
         const [, patchedPackageName, patchedPackageVersion] =
-            /^(.+)@([^@]+)$/.exec(patchedPackage) ?? []
+            patchedDependencyRegex.exec(patchedPackage) ?? []
         if (!patchedPackageName || !patchedPackageVersion) {
             console.write("✗ Fail\n")
             throw new Error(`Patched dependency entry "${patchedPackage}" is not a valid value.`)
@@ -28,7 +29,7 @@ try {
             )
         }
         const [installedPackage] = bunLockFileInstalledPackage
-        const [, installedPackageVersion] = installedPackage.split("@")
+        const [, , installedPackageVersion] = patchedDependencyRegex.exec(installedPackage) ?? []
         if (installedPackageVersion !== patchedPackageVersion) {
             console.write("✗ Fail\n")
             throw new Error(`Patched dependency "${patchedPackage}" is outdated.
