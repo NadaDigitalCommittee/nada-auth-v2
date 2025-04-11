@@ -56,6 +56,19 @@ export default tseslint.config(
                     prefer: "type-imports",
                 },
             ],
+            "@typescript-eslint/no-restricted-imports": [
+                "error",
+                {
+                    paths: [
+                        {
+                            name: "googleapis",
+                            message:
+                                "Instead, use the full path for each API like googleapis/build/src/apis/drive/v3 because googleapis is not tree-shakeable.",
+                            allowTypeImports: true,
+                        },
+                    ],
+                },
+            ],
         },
     },
     {
