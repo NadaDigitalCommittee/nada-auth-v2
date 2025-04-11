@@ -2,7 +2,9 @@ import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import { Link } from "@mui/material"
 import { type RESTGetAPIGuildPreviewResult, Routes } from "discord-api-types/v10"
-import { google } from "googleapis"
+import { OAuth2Client } from "google-auth-library"
+import { drive_v3 } from "googleapis/build/src/apis/drive/v3"
+import { sheets_v4 } from "googleapis/build/src/apis/sheets/v4"
 import { Hono } from "hono"
 import { deleteCookie } from "hono/cookie"
 import * as v from "valibot"
@@ -109,13 +111,13 @@ const app = new Hono<Env>().post(
                 </ErrorAlert>,
             )
         }
-        const oAuth2Client = new google.auth.OAuth2({
+        const oAuth2Client = new OAuth2Client({
             credentials: {
                 access_token: session.accessToken,
             },
         })
-        const drive = google.drive({ version: "v3", auth: oAuth2Client })
-        const sheets = google.sheets({ version: "v4", auth: oAuth2Client })
+        const drive = new drive_v3.Drive({ auth: oAuth2Client })
+        const sheets = new sheets_v4.Sheets({ auth: oAuth2Client })
 
         const spreadsheetName = `認証システム管理シート（${guildPreview.name}）`
         const spreadsheetCreateResponse = await drive.files

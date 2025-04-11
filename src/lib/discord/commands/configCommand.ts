@@ -25,7 +25,8 @@ import {
     Routes,
 } from "discord-api-types/v10"
 import { type CommandHandler, Components, Embed } from "discord-hono"
-import { google } from "googleapis"
+import { OAuth2Client } from "google-auth-library"
+import { drive_v3 } from "googleapis/build/src/apis/drive/v3"
 import { hc } from "hono/client"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
@@ -441,7 +442,7 @@ export const handler: CommandHandler<Env> = async (c) => {
             ]
             const hard = sheetsRevokeOptions[0]?.value ?? false
             if (hard) {
-                const oAuth2Client = new google.auth.OAuth2({
+                const oAuth2Client = new OAuth2Client({
                     clientId: c.env.GOOGLE_OAUTH_CLIENT_ID,
                     clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
                     credentials: {
@@ -464,10 +465,13 @@ export const handler: CommandHandler<Env> = async (c) => {
                     guildConfig._sheet.accessTokenExpiry = credentials.expiry_date!
                     /* eslint-enable @typescript-eslint/no-non-null-assertion */
                 }
-                const drive = google.drive({ version: "v2", auth: oAuth2Client })
+                const drive = new drive_v3.Drive({ auth: oAuth2Client })
                 const spreadsheetDeleteResponse = await drive.files
-                    .trash({
+                    .update({
                         fileId: guildConfig._sheet.spreadsheetId,
+                        requestBody: {
+                            trashed: true,
+                        },
                         supportsAllDrives: true,
                     })
                     .catch(id<unknown, Error>)

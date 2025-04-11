@@ -7,7 +7,7 @@ import {
     type Snowflake,
 } from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
-import { google } from "googleapis"
+import { sheets_v4 } from "googleapis/build/src/apis/sheets/v4"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { deleteCookie } from "hono/cookie"
@@ -273,7 +273,7 @@ const app = new Hono<Env>().get(
         }
         await (async function processSpreadsheet() {
             if (!guildConfig._sheet?.spreadsheetId) return
-            const oAuth2Client = new google.auth.OAuth2({
+            const oAuth2Client = new OAuth2Client({
                 clientId: c.env.GOOGLE_OAUTH_CLIENT_ID,
                 clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
                 credentials: {
@@ -304,7 +304,7 @@ const app = new Hono<Env>().get(
                 /* eslint-enable @typescript-eslint/no-non-null-assertion */
                 await c.env.GuildConfigs.put(session.guildId, JSON.stringify(guildConfig))
             }
-            const sheets = google.sheets({ version: "v4", auth: oAuth2Client })
+            const sheets = new sheets_v4.Sheets({ auth: oAuth2Client })
             const spreadsheetMeta = await sheets.spreadsheets
                 .get({
                     spreadsheetId: guildConfig._sheet.spreadsheetId,
