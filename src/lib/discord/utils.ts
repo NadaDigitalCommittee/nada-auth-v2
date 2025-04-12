@@ -1,3 +1,5 @@
+import { API } from "@discordjs/core/http-only"
+import { channelMention, roleMention, userMention } from "@discordjs/formatters"
 import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
 import {
     type APIApplicationCommandInteractionDataBasicOption,
@@ -6,15 +8,13 @@ import {
     type APIUser,
     type APIWebhook,
     ApplicationCommandOptionType,
-    type RESTGetAPIGuildPreviewResult,
-    type RESTPostAPIWebhookWithTokenJSONBody,
-    Routes,
     type Snowflake,
 } from "discord-api-types/v10"
 import { Embed } from "discord-hono"
 import type { Context } from "hono"
 
 import type { Env } from "../schema/env"
+import { orNull } from "../utils/exceptions"
 import { DISCORD_EMBEDS_MAX_COUNT, loggingWebhookAvatarPath } from "./constants"
 import type { InteractionsNSPath } from "./structure"
 
@@ -32,18 +32,19 @@ export const prettifyOptionValue = <
     additionalData?: { defaultValue?: string },
 ): string => {
     if (optionValue == null) return additionalData?.defaultValue ?? "null"
+    const optionValueString = `${optionValue}`
     switch (optionValueType) {
         case ApplicationCommandOptionType.String:
         case ApplicationCommandOptionType.Integer:
         case ApplicationCommandOptionType.Number:
         case ApplicationCommandOptionType.Boolean:
-            return `${optionValue}`
+            return optionValueString
         case ApplicationCommandOptionType.Channel:
-            return `<#${optionValue}>`
+            return channelMention(optionValueString)
         case ApplicationCommandOptionType.Role:
-            return `<@&${optionValue}>`
+            return roleMention(optionValueString)
         case ApplicationCommandOptionType.User:
-            return `<@${optionValue}>`
+            return userMention(optionValueString)
     }
 }
 
@@ -59,14 +60,9 @@ export const reportErrorWithContext = async (
     context: ErrorContext,
     env: Env["Bindings"],
 ) => {
-    const rest = new REST({ version: "10" }).setToken(env.DISCORD_TOKEN)
+    const discord = new API(new REST({ version: "10" }).setToken(env.DISCORD_TOKEN))
     const guildPreview =
-        context.guildId &&
-        ((await rest
-            .get(Routes.guildPreview(context.guildId))
-            .catch(
-                (e: unknown) => (console.error(e), null),
-            )) as RESTGetAPIGuildPreviewResult | null)
+        context.guildId && (await discord.guilds.getPreview(context.guildId).catch(orNull))
     console.error({
         error,
         context: { ...context, guild: guildPreview },
@@ -93,21 +89,26 @@ export class Logger {
 
     private timestamp: Date
 
-    private rest: REST
+    private discord: API
 
     private logStack: APIEmbed[]
 
-    constructor(options: {
+    constructor({
+        context,
+        webhook,
+        author,
+        timestampInSeconds,
+    }: {
         context: Context<Env>
         webhook: APIWebhook | undefined
         author: APIUser
         timestampInSeconds: number
     }) {
-        this.webhook = options.webhook
-        this.author = options.author
-        this.timestamp = new Date(options.timestampInSeconds * 1000)
-        this.rest = new REST({ version: "10" }).setToken(options.context.env.DISCORD_TOKEN)
-        this.avatarUrl = new URL(loggingWebhookAvatarPath, options.context.env.ORIGIN)
+        this.webhook = webhook
+        this.author = author
+        this.timestamp = new Date(timestampInSeconds * 1000)
+        this.discord = new API(new REST({ version: "10" }).setToken(context.env.DISCORD_TOKEN))
+        this.avatarUrl = new URL(loggingWebhookAvatarPath, context.env.ORIGIN)
         this.logStack = []
     }
 
@@ -147,15 +148,13 @@ export class Logger {
     }
 
     async [Symbol.asyncDispose]() {
-        if (!this.webhook) return
+        if (!this.webhook?.token) return
         while (this.logStack.length) {
             const chunk = this.logStack.splice(0, DISCORD_EMBEDS_MAX_COUNT)
-            await this.rest
-                .post(Routes.webhook(this.webhook.id, this.webhook.token), {
-                    body: {
-                        avatar_url: this.avatarUrl.href,
-                        embeds: chunk,
-                    } satisfies RESTPostAPIWebhookWithTokenJSONBody,
+            await this.discord.webhooks
+                .execute(this.webhook.id, this.webhook.token, {
+                    avatar_url: this.avatarUrl.href,
+                    embeds: chunk,
                 })
                 .catch((error: unknown) => {
                     if (error instanceof Error) {

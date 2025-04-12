@@ -1,10 +1,6 @@
+import type { WebhooksAPI } from "@discordjs/core/http-only"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
-import {
-    type RESTPatchAPIWebhookWithTokenMessageJSONBody,
-    type RESTPatchAPIWebhookWithTokenMessageResult,
-    Routes,
-} from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
@@ -61,7 +57,6 @@ const app = new Hono<Env>()
         async (c) => {
             const authNRequestRecord = c.env.AuthNRequests
             const sessionRecord = c.env.Sessions
-            const { rest } = c.var
             const sessionId = await (async () => {
                 const requestToken = c.req.valid("query").token
                 const kvSessionIdKey = `requestToken:${requestToken}` satisfies AuthNRequest
@@ -109,24 +104,23 @@ const app = new Hono<Env>()
             const errorContext = {
                 guildId: session.guildId,
             } as const satisfies ErrorContext
-            const originalInteractionResRoute = Routes.webhookMessage(
+            const originalInteractions = [
                 c.env.DISCORD_APPLICATION_ID,
                 session.interactionToken,
                 "@original",
-            )
-            const originalResponse = (await rest
-                .get(originalInteractionResRoute)
+            ] satisfies Parameters<WebhooksAPI["getMessage"]>
+
+            const originalResponse = await c.var.discord.webhooks
+                .getMessage(...originalInteractions)
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
                     return null
-                })) as RESTPatchAPIWebhookWithTokenMessageResult | null
+                })
             if (originalResponse?.components?.length) {
-                await rest
-                    .patch(originalInteractionResRoute, {
-                        body: {
-                            content: ":tickets: リンクが使用されました。",
-                            components: [],
-                        } satisfies RESTPatchAPIWebhookWithTokenMessageJSONBody,
+                await c.var.discord.webhooks
+                    .editMessage(...originalInteractions, {
+                        content: ":tickets: リンクが使用されました。",
+                        components: [],
                     })
                     .catch(async (e: unknown) => {
                         if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)

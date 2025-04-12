@@ -1,11 +1,7 @@
+import { codeBlock, userMention } from "@discordjs/formatters"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
-import {
-    type RESTPatchAPIGuildMemberJSONBody,
-    type RESTPatchAPIWebhookWithTokenMessageJSONBody,
-    Routes,
-    type Snowflake,
-} from "discord-api-types/v10"
+import type { RESTPatchAPIWebhookWithTokenMessageJSONBody, Snowflake } from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
 import { sheets_v4 } from "googleapis/build/src/apis/sheets/v4"
 import { Hono } from "hono"
@@ -78,7 +74,6 @@ const app = new Hono<Env>().get(
     async (c) => {
         const sessionRecord = c.env.Sessions
         const guildConfigRecord = c.env.GuildConfigs
-        const { rest } = c.var
         const AUTHN_FAILED_MESSAGE = `:x: 認証に失敗しました。以下の点を確認し、再試行してください。
 * 学校から配付された Google アカウントでログインしていること。
 * メールアドレスとプロフィール情報へのアクセスを許可していること。
@@ -109,19 +104,20 @@ const app = new Hono<Env>().get(
             guildId: session.guildId,
             user: session.user,
         } as const satisfies ErrorContext
-        const originalInteractionResRoute = Routes.webhookMessage(
-            c.env.DISCORD_APPLICATION_ID,
-            session.interactionToken,
-            "@original",
-        )
         const editOriginal = async (
             body: RESTPatchAPIWebhookWithTokenMessageJSONBody,
-        ): Promise<void> =>
-            void (await rest
-                .patch(originalInteractionResRoute, { body })
+        ): Promise<void> => {
+            await c.var.discord.webhooks
+                .editMessage(
+                    c.env.DISCORD_APPLICATION_ID,
+                    session.interactionToken,
+                    "@original",
+                    body,
+                )
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                }))
+                })
+        }
         const rawGuildConfig = await guildConfigRecord.get(session.guildId, "json").catch(id)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
@@ -230,11 +226,11 @@ const app = new Hono<Env>().get(
             session.userProfile &&
             v.safeParse(generateSchema(session.userProfile), nadaACWorkSpaceUser)
         if (userProfileValidationResult?.success !== true) {
-            const logMessage = `\`\`\`${
+            const logMessage = codeBlock(
                 userProfileValidationResult?.issues
-                    .map((issue) => `${issue.message}\n  at ${v.getDotPath(issue) ?? "<none>"}\n`)
-                    .join("\n") ?? "User bypassed the profile entry process."
-            }\`\`\``
+                    .map((issue) => `${issue.message}\n  at ${v.getDotPath(issue) ?? "<none>"}`)
+                    .join("\n\n") ?? "User bypassed the profile entry process.",
+            )
             if (guildConfig.strictIntegrityCheck === true) {
                 await editOriginal({
                     content: AUTHN_FAILED_MESSAGE,
@@ -377,7 +373,11 @@ const app = new Hono<Env>().get(
                     fields: [
                         {
                             name: "Details",
-                            value: `\`\`\`\n${sheetValuesParseResult.issues.map((issue) => issue.message).join("\n")}\`\`\``,
+                            value: codeBlock(
+                                sheetValuesParseResult.issues
+                                    .map((issue) => issue.message)
+                                    .join("\n\n"),
+                            ),
                         },
                     ],
                 })
@@ -401,7 +401,7 @@ const app = new Hono<Env>().get(
                         v.ArrayPathItem,
                     ]
                     const errorStack = `  at ${zeroBasedRangeToA1Notation(colIndex, rowIndex + 1 /* ヘッダー1行分 */)} (item ${indexInCell})`
-                    ruleSyntaxErrors.push([rowIndex, `${issue.message}\n${errorStack}\n`])
+                    ruleSyntaxErrors.push([rowIndex, `${issue.message}\n${errorStack}`])
                 }
                 return acc
             }, [])
@@ -419,7 +419,7 @@ const app = new Hono<Env>().get(
                     fields: [
                         {
                             name: "Details",
-                            value: `\`\`\`\n${messages.join("\n")}\`\`\``,
+                            value: codeBlock(messages.join("\n\n")),
                         },
                     ],
                 })
@@ -436,18 +436,16 @@ const app = new Hono<Env>().get(
                         fields: [
                             {
                                 name: "Details",
-                                value: `\`\`\`\n${nicknameFormatResult.warnings
-                                    .map((w) => w.stack)
-                                    .join("\n\n")}\`\`\``,
+                                value: codeBlock(
+                                    nicknameFormatResult.warnings.map((w) => w.stack).join("\n\n"),
+                                ),
                             },
                         ],
                     })
                 }
-                await c.var.rest
-                    .patch(Routes.guildMember(session.guildId, session.user.id), {
-                        body: {
-                            nick: nicknameFormatResult.formatted,
-                        } satisfies RESTPatchAPIGuildMemberJSONBody,
+                await c.var.discord.guilds
+                    .editMember(session.guildId, session.user.id, {
+                        nick: nicknameFormatResult.formatted,
                     })
                     .catch((e: unknown) => {
                         logger.error({
@@ -473,7 +471,7 @@ const app = new Hono<Env>().get(
                     const colIndex = 7 // ロールのcolIndexは7
                     const [{ key: indexInCell }] = issue.path as [v.ArrayPathItem]
                     const errorStack = `  at ${zeroBasedRangeToA1Notation(colIndex, rule.rowIndex + 1 /* ヘッダー1行分 */)} (item ${indexInCell})`
-                    roleSyntaxErrors.push([rule.rowIndex, `${issue.message}\n${errorStack}\n`])
+                    roleSyntaxErrors.push([rule.rowIndex, `${issue.message}\n${errorStack}`])
                     return
                 }
                 rolesParseResult.output.forEach(([roleId, op]) => {
@@ -494,7 +492,7 @@ const app = new Hono<Env>().get(
                     fields: [
                         {
                             name: "Details",
-                            value: `\`\`\`\n${messages.join("\n")}\`\`\``,
+                            value: codeBlock(messages.join("\n\n")),
                         },
                     ],
                 })
@@ -511,11 +509,9 @@ const app = new Hono<Env>().get(
                 rolesHaveChanges = true
             })
             if (!rolesHaveChanges) return
-            await c.var.rest
-                .patch(Routes.guildMember(session.guildId, session.user.id), {
-                    body: {
-                        roles: [...userRoles],
-                    } satisfies RESTPatchAPIGuildMemberJSONBody,
+            await c.var.discord.guilds
+                .editMember(session.guildId, session.user.id, {
+                    roles: [...userRoles],
                 })
                 .catch((e: unknown) => {
                     logger.error({
@@ -534,7 +530,7 @@ const app = new Hono<Env>().get(
             const commonEmbedFields = [
                 {
                     name: "名前",
-                    value: `${userProfile.lastName} ${userProfile.firstName} (<@${session.user.id}>)`,
+                    value: `${userProfile.lastName} ${userProfile.firstName} (${userMention(session.user.id)})`,
                 },
                 {
                     name: "メールアドレス",
