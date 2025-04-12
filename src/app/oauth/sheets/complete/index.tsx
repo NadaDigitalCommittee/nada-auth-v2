@@ -1,7 +1,6 @@
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import { Link } from "@mui/material"
-import { type RESTGetAPIGuildPreviewResult, Routes } from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
 import { drive_v3 } from "googleapis/build/src/apis/drive/v3"
 import { sheets_v4 } from "googleapis/build/src/apis/sheets/v4"
@@ -97,9 +96,9 @@ const app = new Hono<Env>().post(
             guildId: session.guildId,
         } as const satisfies ErrorContext
 
-        const guildPreview = (await c.var.rest
-            .get(Routes.guildPreview(session.guildId))
-            .catch(id)) as RESTGetAPIGuildPreviewResult | Error
+        const guildPreview = await c.var.discord.guilds
+            .getPreview(session.guildId)
+            .catch(id<unknown, Error>)
 
         if (guildPreview instanceof Error) {
             c.status(500)

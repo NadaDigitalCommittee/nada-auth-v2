@@ -1,6 +1,7 @@
+import type { WebhooksAPI } from "@discordjs/core/http-only"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
-import { type RESTPatchAPIWebhookWithTokenMessageJSONBody, Routes } from "discord-api-types/v10"
+import type { RESTPatchAPIWebhookWithTokenMessageJSONBody } from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
@@ -56,7 +57,6 @@ const app = new Hono<Env>().get(
     async (c) => {
         const sessionRecord = c.env.Sessions
         const guildConfigRecord = c.env.GuildConfigs
-        const { rest } = c.var
         const OAUTH_FAILED_MESSAGE = `:x: 認証に失敗しました。`
         const sessionId = c.req.valid("cookie").sid
         const query = c.req.valid("query")
@@ -77,19 +77,20 @@ const app = new Hono<Env>().get(
         const errorContext = {
             guildId: session.guildId,
         } as const satisfies ErrorContext
-        const originalInteractionResRoute = Routes.webhookMessage(
+        const originalInteractions = [
             c.env.DISCORD_APPLICATION_ID,
             session.interactionToken,
             "@original",
-        )
+        ] satisfies Parameters<WebhooksAPI["getMessage"]>
         const editOriginal = async (
             body: RESTPatchAPIWebhookWithTokenMessageJSONBody,
-        ): Promise<void> =>
-            void (await rest
-                .patch(originalInteractionResRoute, { body })
+        ): Promise<void> => {
+            await c.var.discord.webhooks
+                .editMessage(...originalInteractions, body)
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                }))
+                })
+        }
         const rawGuildConfig = await guildConfigRecord.get(session.guildId, "json").catch(id)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {

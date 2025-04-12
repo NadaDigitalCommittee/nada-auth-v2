@@ -66,6 +66,11 @@ export default tseslint.config(
                                 "Instead, use the full path for each API like googleapis/build/src/apis/drive/v3 because googleapis is not tree-shakeable.",
                             allowTypeImports: true,
                         },
+                        {
+                            name: "@discordjs/core",
+                            message: "Use @discordjs/core/http-only instead.",
+                            allowTypeImports: false,
+                        },
                     ],
                 },
             ],

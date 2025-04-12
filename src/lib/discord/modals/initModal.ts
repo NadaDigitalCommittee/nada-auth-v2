@@ -1,10 +1,9 @@
+import { API } from "@discordjs/core/http-only"
 import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
 import { isGuildInteraction } from "discord-api-types/utils"
 import {
     type APIModalInteractionResponseCallbackData,
     ComponentType,
-    type RESTPostAPIWebhookWithTokenJSONBody,
-    Routes,
     TextInputStyle,
 } from "discord-api-types/v10"
 import { Components, type ModalHandler } from "discord-hono"
@@ -68,7 +67,7 @@ export const handler: ModalHandler<
     const messageContent = c.var["message-content"] || undefined
     const buttonLabel =
         c.var["button-label"]?.trim() || CustomComponents.signInButton.component.label
-    const rest = new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN)
+    const discord = new API(new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN))
     const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     const { guild_id: guildId, member } = interaction
@@ -99,23 +98,21 @@ export const handler: ModalHandler<
     }
     const guildConfig = guildConfigParseResult.output
     const signInButtonWebhook = guildConfig._signInButtonWebhook
-    if (!signInButtonWebhook)
+    if (!signInButtonWebhook?.token)
         return c.res(
             ":warning: Webhook が見つかりませんでした。再度 /init コマンドを実行してみてください。",
         )
-    const webhookExecutionResult = await rest
-        .post(Routes.webhook(signInButtonWebhook.id, signInButtonWebhook.token), {
-            body: {
-                avatar_url: signInButtonWebhook.avatar
-                    ? new CDN().avatar(signInButtonWebhook.id, signInButtonWebhook.avatar)
-                    : new URL(signInButtonWebhookAvatarPath, c.env.ORIGIN).href,
-                content: messageContent,
-                components: new Components()
-                    .row({ ...CustomComponents.signInButton.component, label: buttonLabel })
-                    .toJSON(),
-            } satisfies RESTPostAPIWebhookWithTokenJSONBody,
+    const webhookExecutionResult = await discord.webhooks
+        .execute(signInButtonWebhook.id, signInButtonWebhook.token, {
+            avatar_url: signInButtonWebhook.avatar
+                ? new CDN().avatar(signInButtonWebhook.id, signInButtonWebhook.avatar)
+                : new URL(signInButtonWebhookAvatarPath, c.env.ORIGIN).href,
+            content: messageContent,
+            components: new Components()
+                .row({ ...CustomComponents.signInButton.component, label: buttonLabel })
+                .toJSON(),
         })
-        .catch(id)
+        .catch(id<unknown, DiscordAPIError>)
     if (webhookExecutionResult instanceof DiscordAPIError) {
         await reportErrorWithContext(webhookExecutionResult, errorContext, c.env)
         return c.res(

@@ -1,11 +1,6 @@
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
-import {
-    type RESTPatchAPIGuildMemberJSONBody,
-    type RESTPatchAPIWebhookWithTokenMessageJSONBody,
-    Routes,
-    type Snowflake,
-} from "discord-api-types/v10"
+import type { RESTPatchAPIWebhookWithTokenMessageJSONBody, Snowflake } from "discord-api-types/v10"
 import { OAuth2Client } from "google-auth-library"
 import { sheets_v4 } from "googleapis/build/src/apis/sheets/v4"
 import { Hono } from "hono"
@@ -78,7 +73,6 @@ const app = new Hono<Env>().get(
     async (c) => {
         const sessionRecord = c.env.Sessions
         const guildConfigRecord = c.env.GuildConfigs
-        const { rest } = c.var
         const AUTHN_FAILED_MESSAGE = `:x: 認証に失敗しました。以下の点を確認し、再試行してください。
 * 学校から配付された Google アカウントでログインしていること。
 * メールアドレスとプロフィール情報へのアクセスを許可していること。
@@ -109,19 +103,20 @@ const app = new Hono<Env>().get(
             guildId: session.guildId,
             user: session.user,
         } as const satisfies ErrorContext
-        const originalInteractionResRoute = Routes.webhookMessage(
-            c.env.DISCORD_APPLICATION_ID,
-            session.interactionToken,
-            "@original",
-        )
         const editOriginal = async (
             body: RESTPatchAPIWebhookWithTokenMessageJSONBody,
-        ): Promise<void> =>
-            void (await rest
-                .patch(originalInteractionResRoute, { body })
+        ): Promise<void> => {
+            await c.var.discord.webhooks
+                .editMessage(
+                    c.env.DISCORD_APPLICATION_ID,
+                    session.interactionToken,
+                    "@original",
+                    body,
+                )
                 .catch(async (e: unknown) => {
                     if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                }))
+                })
+        }
         const rawGuildConfig = await guildConfigRecord.get(session.guildId, "json").catch(id)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
@@ -443,11 +438,9 @@ const app = new Hono<Env>().get(
                         ],
                     })
                 }
-                await c.var.rest
-                    .patch(Routes.guildMember(session.guildId, session.user.id), {
-                        body: {
-                            nick: nicknameFormatResult.formatted,
-                        } satisfies RESTPatchAPIGuildMemberJSONBody,
+                await c.var.discord.guilds
+                    .editMember(session.guildId, session.user.id, {
+                        nick: nicknameFormatResult.formatted,
                     })
                     .catch((e: unknown) => {
                         logger.error({
@@ -511,11 +504,9 @@ const app = new Hono<Env>().get(
                 rolesHaveChanges = true
             })
             if (!rolesHaveChanges) return
-            await c.var.rest
-                .patch(Routes.guildMember(session.guildId, session.user.id), {
-                    body: {
-                        roles: [...userRoles],
-                    } satisfies RESTPatchAPIGuildMemberJSONBody,
+            await c.var.discord.guilds
+                .editMember(session.guildId, session.user.id, {
+                    roles: [...userRoles],
                 })
                 .catch((e: unknown) => {
                     logger.error({

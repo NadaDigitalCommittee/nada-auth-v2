@@ -1,4 +1,4 @@
-import type { REST } from "@discordjs/rest"
+import type { API } from "@discordjs/core/http-only"
 import type { Env as EnvPrimitive } from "hono"
 import type { UnknownRecord } from "type-fest"
 import * as v from "valibot"
@@ -38,7 +38,7 @@ export const $EnvVars = v.object({
 })
 export interface Env extends EnvPrimitive {
     Bindings: { ASSETS: Fetcher } & KVNamespaces & v.InferOutput<typeof $EnvVars>
-    Variables: { rest: REST } & UnknownRecord
+    Variables: { discord: API } & UnknownRecord
 }
 export interface UnknownEnv extends EnvPrimitive {
     Bindings?: Record<string, unknown>
