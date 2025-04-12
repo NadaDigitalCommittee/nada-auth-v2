@@ -8,6 +8,7 @@ export const $GuildId = $Snowflake
 export const $GuildConfig = v.object({
     loggingChannelId: v.optional($Snowflake),
     strictIntegrityCheck: v.optional(v.boolean()),
+    profileFallback: v.optional(v.boolean()),
     _sheet: v.optional(
         v.object({
             spreadsheetId: v.optional(v.string()),

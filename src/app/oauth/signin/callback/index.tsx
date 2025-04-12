@@ -33,7 +33,7 @@ import { NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { orNull } from "@/lib/utils/exceptions"
 import { formatNickname } from "@/lib/utils/formatNickname"
 import { id } from "@/lib/utils/fp"
-import { extractNadaACWorkSpaceUserFromTokenPayload } from "@/lib/utils/nadaAc"
+import { extractNadaACWorkSpaceUserFromTokenPayload, mergeProfile } from "@/lib/utils/nadaAc"
 import {
     sheetId as targetSheetId,
     valuesRangeA1,
@@ -265,6 +265,8 @@ const app = new Hono<Env>().get(
                         },
                     ],
                 })
+                if (session.userProfile && guildConfig.profileFallback !== false)
+                    mergeProfile(session.userProfile, nadaACWorkSpaceUser, tokenPayload.iat)
             }
         }
         await (async function processSpreadsheet() {
@@ -542,7 +544,7 @@ const app = new Hono<Env>().get(
                     return [
                         {
                             name: "学年",
-                            value: `${userProfile.gradeDisplay} (${userProfile.cohort}回生)`,
+                            value: `${userProfile.formattedGrade} (${userProfile.cohort}回生)`,
                             inline: true,
                         },
                         {

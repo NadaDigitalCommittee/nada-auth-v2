@@ -23,6 +23,7 @@ export const sessionExpirationTtlDev = 86400
 const guildConfigOptionMapBase = [
     ["logging-channel", "loggingChannelId"],
     ["strict", "strictIntegrityCheck"],
+    ["profile-fallback", "profileFallback"],
 ] as const satisfies [string, keyof GuildConfig][]
 export const guildConfigOptionNameToKvKeyMap = new ReadonlyMap(guildConfigOptionMapBase)
 export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
@@ -32,6 +33,7 @@ export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
 export const guildConfigInit = {
     loggingChannelId: undefined,
     strictIntegrityCheck: false,
+    profileFallback: true,
 } satisfies GuildConfig
 
 export const loggingWebhookAvatarPath = "/assets/u1fa84_u1f525.webp"
