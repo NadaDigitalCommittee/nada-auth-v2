@@ -3,7 +3,12 @@ import type { SetRequired } from "type-fest"
 
 import { getJstAcademicYear } from "./date"
 
-import { type Grade, type NadaAcWorkSpaceUser, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
+import {
+    type Grade,
+    type NadaAcWorkSpacePartialUser,
+    type NadaAcWorkSpaceUser,
+    NadaAcWorkSpaceUserType,
+} from "@/lib/types/nadaAc"
 
 export const OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT = 1941
 export const GRADE_SPAN = 3
@@ -13,6 +18,9 @@ export const formatGrade = (grade: Grade) =>
 
 export const calcCohortFromGrade = (grade: Grade, jstAcademicYear: number) =>
     jstAcademicYear - OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT - grade
+
+export const calcGradeFromCohort = (cohort: number, jstAcademicYear: number) =>
+    (jstAcademicYear - OFFSET_BETWEEN_ACADEMIC_YEAR_AND_ZEROTH_GRADE_COHORT - cohort) as Grade
 
 interface UserProfileSource {
     grade: `${Grade}`
@@ -54,5 +62,38 @@ export const extractNadaACWorkSpaceUserFromTokenPayload = (
             lastName: userProfileSource.familyName,
             email: tokenPayload.email,
         },
+    }
+}
+
+export const mergeProfile = (
+    source: NadaAcWorkSpacePartialUser,
+    target: NadaAcWorkSpaceUser,
+    iat: number,
+): void => {
+    switch (source.type) {
+        case NadaAcWorkSpaceUserType.Student: {
+            const jstIssuedAcademicYear = getJstAcademicYear(new Date(iat * 1000))
+            const grade = calcGradeFromCohort(source.profile.cohort, jstIssuedAcademicYear)
+            const formattedGrade = formatGrade(grade)
+            Object.assign(target, {
+                type: source.type,
+                profile: {
+                    ...source.profile,
+                    grade,
+                    formattedGrade,
+                    email: target.profile.email,
+                },
+            } satisfies NadaAcWorkSpaceUser)
+            return
+        }
+        case NadaAcWorkSpaceUserType.Others:
+            Object.assign(target, {
+                type: source.type,
+                profile: {
+                    ...source.profile,
+                    email: target.profile.email,
+                },
+            } satisfies NadaAcWorkSpaceUser)
+            return
     }
 }

@@ -78,6 +78,20 @@ const configSetOptions = [
             },
         ],
     },
+    {
+        name: "profile-fallback",
+        description: "プロフィール情報のフォールバック",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+            {
+                name: "value",
+                description:
+                    "厳格モードが無効でプロフィール情報が合致しなかった場合に、ユーザー入力にフォールバックします。既定で有効です。",
+                type: ApplicationCommandOptionType.Boolean,
+                required: false,
+            },
+        ],
+    },
 ] as const satisfies Array<
     APIApplicationCommandSubcommandOption & {
         name: MapKeyOf<typeof guildConfigOptionNameToKvKeyMap>
@@ -249,7 +263,8 @@ export const handler: CommandHandler<Env> = async (c) => {
         case "get":
             return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
         case "set logging-channel":
-        case "set strict": {
+        case "set strict":
+        case "set profile-fallback": {
             const subcommandName = c.sub.string.split(" ").at(-1)
             const subcommandOptionOption = (
                 options[0] as APIApplicationCommandInteractionDataSubcommandGroupOption
