@@ -1,3 +1,4 @@
+import { codeBlock, userMention } from "@discordjs/formatters"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import type { RESTPatchAPIWebhookWithTokenMessageJSONBody, Snowflake } from "discord-api-types/v10"
@@ -225,11 +226,11 @@ const app = new Hono<Env>().get(
             session.userProfile &&
             v.safeParse(generateSchema(session.userProfile), nadaACWorkSpaceUser)
         if (userProfileValidationResult?.success !== true) {
-            const logMessage = `\`\`\`${
+            const logMessage = codeBlock(
                 userProfileValidationResult?.issues
-                    .map((issue) => `${issue.message}\n  at ${v.getDotPath(issue) ?? "<none>"}\n`)
-                    .join("\n") ?? "User bypassed the profile entry process."
-            }\`\`\``
+                    .map((issue) => `${issue.message}\n  at ${v.getDotPath(issue) ?? "<none>"}`)
+                    .join("\n\n") ?? "User bypassed the profile entry process.",
+            )
             if (guildConfig.strictIntegrityCheck === true) {
                 await editOriginal({
                     content: AUTHN_FAILED_MESSAGE,
@@ -372,7 +373,11 @@ const app = new Hono<Env>().get(
                     fields: [
                         {
                             name: "Details",
-                            value: `\`\`\`\n${sheetValuesParseResult.issues.map((issue) => issue.message).join("\n")}\`\`\``,
+                            value: codeBlock(
+                                sheetValuesParseResult.issues
+                                    .map((issue) => issue.message)
+                                    .join("\n\n"),
+                            ),
                         },
                     ],
                 })
@@ -396,7 +401,7 @@ const app = new Hono<Env>().get(
                         v.ArrayPathItem,
                     ]
                     const errorStack = `  at ${zeroBasedRangeToA1Notation(colIndex, rowIndex + 1 /* ヘッダー1行分 */)} (item ${indexInCell})`
-                    ruleSyntaxErrors.push([rowIndex, `${issue.message}\n${errorStack}\n`])
+                    ruleSyntaxErrors.push([rowIndex, `${issue.message}\n${errorStack}`])
                 }
                 return acc
             }, [])
@@ -414,7 +419,7 @@ const app = new Hono<Env>().get(
                     fields: [
                         {
                             name: "Details",
-                            value: `\`\`\`\n${messages.join("\n")}\`\`\``,
+                            value: codeBlock(messages.join("\n\n")),
                         },
                     ],
                 })
@@ -431,9 +436,9 @@ const app = new Hono<Env>().get(
                         fields: [
                             {
                                 name: "Details",
-                                value: `\`\`\`\n${nicknameFormatResult.warnings
-                                    .map((w) => w.stack)
-                                    .join("\n\n")}\`\`\``,
+                                value: codeBlock(
+                                    nicknameFormatResult.warnings.map((w) => w.stack).join("\n\n"),
+                                ),
                             },
                         ],
                     })
@@ -466,7 +471,7 @@ const app = new Hono<Env>().get(
                     const colIndex = 7 // ロールのcolIndexは7
                     const [{ key: indexInCell }] = issue.path as [v.ArrayPathItem]
                     const errorStack = `  at ${zeroBasedRangeToA1Notation(colIndex, rule.rowIndex + 1 /* ヘッダー1行分 */)} (item ${indexInCell})`
-                    roleSyntaxErrors.push([rule.rowIndex, `${issue.message}\n${errorStack}\n`])
+                    roleSyntaxErrors.push([rule.rowIndex, `${issue.message}\n${errorStack}`])
                     return
                 }
                 rolesParseResult.output.forEach(([roleId, op]) => {
@@ -487,7 +492,7 @@ const app = new Hono<Env>().get(
                     fields: [
                         {
                             name: "Details",
-                            value: `\`\`\`\n${messages.join("\n")}\`\`\``,
+                            value: codeBlock(messages.join("\n\n")),
                         },
                     ],
                 })
@@ -525,7 +530,7 @@ const app = new Hono<Env>().get(
             const commonEmbedFields = [
                 {
                     name: "名前",
-                    value: `${userProfile.lastName} ${userProfile.firstName} (<@${session.user.id}>)`,
+                    value: `${userProfile.lastName} ${userProfile.firstName} (${userMention(session.user.id)})`,
                 },
                 {
                     name: "メールアドレス",

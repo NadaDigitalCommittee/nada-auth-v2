@@ -1,4 +1,5 @@
 import { API } from "@discordjs/core/http-only"
+import { blockQuote } from "@discordjs/formatters"
 import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
 import { isGuildInteraction } from "discord-api-types/utils"
 import {
@@ -116,7 +117,7 @@ export const handler: ModalHandler<
     if (webhookExecutionResult instanceof DiscordAPIError) {
         await reportErrorWithContext(webhookExecutionResult, errorContext, c.env)
         return c.res(
-            `:x: メッセージを送信できませんでした。理由: \n>>> ${webhookExecutionResult.message}`,
+            `:x: メッセージを送信できませんでした。理由: \n${blockQuote(webhookExecutionResult.message)}`,
         )
     }
     return c.res(":white_check_mark: メッセージを送信しました。")

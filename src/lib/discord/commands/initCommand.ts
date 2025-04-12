@@ -1,4 +1,5 @@
 import { API } from "@discordjs/core/http-only"
+import { blockQuote, channelMention, userMention } from "@discordjs/formatters"
 import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
@@ -152,8 +153,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         if (webhookModificationResult instanceof DiscordAPIError) {
             await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
             return c.res(
-                `:x: Webhook <@${signInButtonWebhook.id}> を更新することができませんでした。\
-この問題が続く場合、サーバー設定の 連携サービス > nada-auth でこの Webhook を削除してみてください。理由: \n>>> ${webhookModificationResult.message}`,
+                `:x: Webhook ${userMention(signInButtonWebhook.id)} を更新することができませんでした。この問題が続く場合、サーバー設定の 連携サービス > nada-auth でこの Webhook を削除してみてください。理由: \n${blockQuote(webhookModificationResult.message)}`,
             )
         }
         guildConfig._signInButtonWebhook = webhookModificationResult
@@ -168,7 +168,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         if (webhookCreationResult instanceof DiscordAPIError) {
             await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
             return c.res(
-                `:x: チャンネル <#${optionValues.channel}> に Webhook を作成することができませんでした。理由: \n>>> ${webhookCreationResult.message}`,
+                `:x: チャンネル ${channelMention(optionValues.channel)} に Webhook を作成することができませんでした。理由: \n${blockQuote(webhookCreationResult.message)}`,
             )
         }
         guildConfig._signInButtonWebhook = webhookCreationResult

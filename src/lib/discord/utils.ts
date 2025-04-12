@@ -1,4 +1,5 @@
 import { API } from "@discordjs/core/http-only"
+import { channelMention, roleMention, userMention } from "@discordjs/formatters"
 import { CDN, DiscordAPIError, REST } from "@discordjs/rest"
 import {
     type APIApplicationCommandInteractionDataBasicOption,
@@ -31,18 +32,19 @@ export const prettifyOptionValue = <
     additionalData?: { defaultValue?: string },
 ): string => {
     if (optionValue == null) return additionalData?.defaultValue ?? "null"
+    const optionValueString = `${optionValue}`
     switch (optionValueType) {
         case ApplicationCommandOptionType.String:
         case ApplicationCommandOptionType.Integer:
         case ApplicationCommandOptionType.Number:
         case ApplicationCommandOptionType.Boolean:
-            return `${optionValue}`
+            return optionValueString
         case ApplicationCommandOptionType.Channel:
-            return `<#${optionValue}>`
+            return channelMention(optionValueString)
         case ApplicationCommandOptionType.Role:
-            return `<@&${optionValue}>`
+            return roleMention(optionValueString)
         case ApplicationCommandOptionType.User:
-            return `<@${optionValue}>`
+            return userMention(optionValueString)
     }
 }
 

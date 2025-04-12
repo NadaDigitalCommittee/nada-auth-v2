@@ -1,4 +1,5 @@
 import { API } from "@discordjs/core/http-only"
+import { blockQuote, channelMention, userMention } from "@discordjs/formatters"
 import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
@@ -278,7 +279,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                     if (webhookModificationResult instanceof Error) {
                         await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
                         return c.res(
-                            `:x: Webhook <@${loggingWebhook.id}> を更新できませんでした。\n理由: \n>>> ${webhookModificationResult.message}`,
+                            `:x: Webhook ${userMention(loggingWebhook.id)} を更新できませんでした。\n理由: \n${blockQuote(webhookModificationResult.message)}`,
                         )
                     }
                     guildConfig._loggingWebhook = webhookModificationResult
@@ -290,7 +291,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                     if (webhookDeletionResult instanceof Error) {
                         await reportErrorWithContext(webhookDeletionResult, errorContext, c.env)
                         return c.res(
-                            `:x: Webhook <@${loggingWebhook.id}> を削除できませんでした。\n理由: \n>>> ${webhookDeletionResult.message}`,
+                            `:x: Webhook ${userMention(loggingWebhook.id)} を削除できませんでした。\n理由: \n${blockQuote(webhookDeletionResult.message)}`,
                         )
                     }
                     delete guildConfig._loggingWebhook
@@ -304,7 +305,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                     if (webhookCreationResult instanceof Error) {
                         await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
                         return c.res(
-                            `:x: チャンネル <#${channelOptionValue}> に Webhook を作成できませんでした。\n理由: \n>>> ${webhookCreationResult.message}`,
+                            `:x: チャンネル ${channelMention(channelOptionValue)} に Webhook を作成できませんでした。\n理由: \n${blockQuote(webhookCreationResult.message)}`,
                         )
                     }
                     guildConfig._loggingWebhook = webhookCreationResult
@@ -343,10 +344,9 @@ export const handler: CommandHandler<Env> = async (c) => {
                     .catch(id<unknown, Error>)
                 if (!forceReset && loggingWebhookDeletionResult instanceof Error) {
                     await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
-                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: Webhook <@${loggingWebhook.id}> を削除することができませんでした。
-理由:
->>> ${loggingWebhookDeletionResult.message}`)
+                    return c.res(
+                        `:x: サーバー設定を正常に初期化できませんでした。\n:arrow_right_hook: Webhook ${userMention(loggingWebhook.id)} を削除することができませんでした。\n理由:\n${blockQuote(loggingWebhookDeletionResult.message)}`,
+                    )
                 }
             }
             const signInButtonWebhook = guildConfig._signInButtonWebhook
@@ -360,10 +360,9 @@ export const handler: CommandHandler<Env> = async (c) => {
                         errorContext,
                         c.env,
                     )
-                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: Webhook <@${signInButtonWebhook.id}> を削除することができませんでした。
-理由:
->>> ${signInButtonWebhookDeletionResult.message}`)
+                    return c.res(
+                        `:x: サーバー設定を正常に初期化できませんでした。\n:arrow_right_hook: Webhook ${userMention(signInButtonWebhook.id)} を削除することができませんでした。\n理由:\n${blockQuote(signInButtonWebhookDeletionResult.message)}`,
+                    )
                 }
             }
             await guildConfigRecord.delete(guildId)
@@ -398,8 +397,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                 url: oAuthUrl.href,
             } as const satisfies APIButtonComponentWithURL
             return c.ephemeral(true).res({
-                content: `:person_tipping_hand: アクセス許可が必要です。下のボタンからアプリにアクセス権を与えてください。
-発行されたリンクは ${requestTokenExpirationTtl} 秒間、1 度だけ有効です。`,
+                content: `:person_tipping_hand: アクセス許可が必要です。下のボタンからアプリにアクセス権を与えてください。\n発行されたリンクは ${requestTokenExpirationTtl} 秒間、1 度だけ有効です。`,
                 components: new Components().row(oAuthButtonLink),
             })
         }

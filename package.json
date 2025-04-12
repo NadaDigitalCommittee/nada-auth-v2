@@ -23,6 +23,7 @@
     },
     "dependencies": {
         "@discordjs/core": "^2.0.1",
+        "@discordjs/formatters": "^0.6.0",
         "@discordjs/rest": "^2.4.3",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.0",
