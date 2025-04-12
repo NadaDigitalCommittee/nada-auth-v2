@@ -1,5 +1,5 @@
 import { API } from "@discordjs/core/http-only"
-import { blockQuote, channelMention, userMention } from "@discordjs/formatters"
+import { blockQuote, channelMention, subtext, userMention } from "@discordjs/formatters"
 import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
@@ -190,7 +190,7 @@ const generateConfigTableEmbed = (config: GuildConfig) =>
                 acc.push({
                     name: optionName,
                     value: prettifyOptionValue(optionValue, optionValueType, {
-                        defaultValue: "-# なし",
+                        defaultValue: subtext("none"),
                     }),
                     inline: true,
                 } satisfies APIEmbedField)
