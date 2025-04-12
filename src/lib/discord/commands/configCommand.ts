@@ -72,7 +72,7 @@ const configSetOptions = [
         options: [
             {
                 name: "value",
-                description: "厳格モードを有効にする（既定値: False）",
+                description: "厳格モードを有効にします。既定で無効です。",
                 type: ApplicationCommandOptionType.Boolean,
                 required: false,
             },
@@ -115,7 +115,7 @@ export const command = {
             options: [
                 {
                     name: "force",
-                    description: "エラーを無視して初期化（既定値: False）",
+                    description: "エラーを無視して初期化します。既定で無効です。",
                     type: ApplicationCommandOptionType.Boolean,
                 },
             ],
@@ -146,7 +146,7 @@ export const command = {
                         {
                             type: ApplicationCommandOptionType.Boolean,
                             name: "hard",
-                            description: "ファイルも破棄する（既定値: False）",
+                            description: "ファイルも破棄します。既定で無効です。",
                             required: false,
                         },
                     ],
