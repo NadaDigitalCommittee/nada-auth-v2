@@ -1,3 +1,5 @@
+import { API } from "@discordjs/core/http-only"
+import { blockQuote, channelMention, subtext, userMention } from "@discordjs/formatters"
 import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
@@ -17,12 +19,7 @@ import {
     ComponentType,
     InteractionContextType,
     PermissionFlagsBits,
-    type RESTPatchAPIWebhookJSONBody,
-    type RESTPatchAPIWebhookResult,
-    type RESTPostAPIChannelWebhookJSONBody,
-    type RESTPostAPIChannelWebhookResult,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
-    Routes,
 } from "discord-api-types/v10"
 import { type CommandHandler, Components, Embed } from "discord-hono"
 import { OAuth2Client } from "google-auth-library"
@@ -75,7 +72,21 @@ const configSetOptions = [
         options: [
             {
                 name: "value",
-                description: "厳格モードを有効にする（既定値: False）",
+                description: "厳格モードを有効にします。既定で無効です。",
+                type: ApplicationCommandOptionType.Boolean,
+                required: false,
+            },
+        ],
+    },
+    {
+        name: "profile-fallback",
+        description: "プロフィール情報のフォールバック",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+            {
+                name: "value",
+                description:
+                    "厳格モードが無効でプロフィール情報が合致しなかった場合に、ユーザー入力にフォールバックします。既定で有効です。",
                 type: ApplicationCommandOptionType.Boolean,
                 required: false,
             },
@@ -118,7 +129,7 @@ export const command = {
             options: [
                 {
                     name: "force",
-                    description: "エラーを無視して初期化（既定値: False）",
+                    description: "エラーを無視して初期化します。既定で無効です。",
                     type: ApplicationCommandOptionType.Boolean,
                 },
             ],
@@ -149,7 +160,7 @@ export const command = {
                         {
                             type: ApplicationCommandOptionType.Boolean,
                             name: "hard",
-                            description: "ファイルも破棄する（既定値: False）",
+                            description: "ファイルも破棄します。既定で無効です。",
                             required: false,
                         },
                     ],
@@ -193,7 +204,7 @@ const generateConfigTableEmbed = (config: GuildConfig) =>
                 acc.push({
                     name: optionName,
                     value: prettifyOptionValue(optionValue, optionValueType, {
-                        defaultValue: "-# なし",
+                        defaultValue: subtext("none"),
                     }),
                     inline: true,
                 } satisfies APIEmbedField)
@@ -208,9 +219,7 @@ const generateConfigTableEmbed = (config: GuildConfig) =>
  */
 export const handler: CommandHandler<Env> = async (c) => {
     const guildConfigRecord = c.env.GuildConfigs
-    // mountするとvarが空になる？
-    // const { rest } = c.var
-    const rest = new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN)
+    const discord = new API(new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN))
     const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
     if (!isChatInputApplicationCommandInteraction(interaction))
@@ -254,7 +263,8 @@ export const handler: CommandHandler<Env> = async (c) => {
         case "get":
             return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
         case "set logging-channel":
-        case "set strict": {
+        case "set strict":
+        case "set profile-fallback": {
             const subcommandName = c.sub.string.split(" ").at(-1)
             const subcommandOptionOption = (
                 options[0] as APIApplicationCommandInteractionDataSubcommandGroupOption
@@ -276,45 +286,41 @@ export const handler: CommandHandler<Env> = async (c) => {
                     >
                 if (isPresent(loggingWebhook) && isPresent(channelOptionValue)) {
                     // すでに Webhook が作成されていて、別のチャンネルに変更される場合
-                    const webhookModificationResult = (await rest
-                        .patch(Routes.webhook(loggingWebhook.id), {
-                            body: {
-                                channel_id: channelOptionValue,
-                            } satisfies RESTPatchAPIWebhookJSONBody,
+                    const webhookModificationResult = await discord.webhooks
+                        .edit(loggingWebhook.id, {
+                            channel_id: channelOptionValue,
                         })
-                        .catch(id)) as RESTPatchAPIWebhookResult | DiscordAPIError
-                    if (webhookModificationResult instanceof DiscordAPIError) {
+                        .catch(id<unknown, Error>)
+                    if (webhookModificationResult instanceof Error) {
                         await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
                         return c.res(
-                            `:x: Webhook <@${loggingWebhook.id}> を更新できませんでした。\n理由: \n>>> ${webhookModificationResult.message}`,
+                            `:x: Webhook ${userMention(loggingWebhook.id)} を更新できませんでした。\n理由: \n${blockQuote(webhookModificationResult.message)}`,
                         )
                     }
                     guildConfig._loggingWebhook = webhookModificationResult
                 } else if (isPresent(loggingWebhook) && !isPresent(channelOptionValue)) {
                     // すでに webhook が作成されていて、それを削除する場合
-                    const webhookDeletionResult = await rest
-                        .delete(Routes.webhook(loggingWebhook.id))
-                        .catch(id)
-                    if (webhookDeletionResult instanceof DiscordAPIError) {
+                    const webhookDeletionResult = await discord.webhooks
+                        .delete(loggingWebhook.id)
+                        .catch(id<unknown, Error>)
+                    if (webhookDeletionResult instanceof Error) {
                         await reportErrorWithContext(webhookDeletionResult, errorContext, c.env)
                         return c.res(
-                            `:x: Webhook <@${loggingWebhook.id}> を削除できませんでした。\n理由: \n>>> ${webhookDeletionResult.message}`,
+                            `:x: Webhook ${userMention(loggingWebhook.id)} を削除できませんでした。\n理由: \n${blockQuote(webhookDeletionResult.message)}`,
                         )
                     }
                     delete guildConfig._loggingWebhook
                 } else if (!isPresent(loggingWebhook) && isPresent(channelOptionValue)) {
                     // webhook がまだ作成されておらず、新たに作る場合
-                    const webhookCreationResult = (await rest
-                        .post(Routes.channelWebhooks(channelOptionValue), {
-                            body: {
-                                name: "nada-auth logging",
-                            } satisfies RESTPostAPIChannelWebhookJSONBody,
+                    const webhookCreationResult = await discord.channels
+                        .createWebhook(channelOptionValue, {
+                            name: "nada-auth logging",
                         })
-                        .catch(id)) as RESTPostAPIChannelWebhookResult | DiscordAPIError
-                    if (webhookCreationResult instanceof DiscordAPIError) {
+                        .catch(id<unknown, Error>)
+                    if (webhookCreationResult instanceof Error) {
                         await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
                         return c.res(
-                            `:x: チャンネル <#${channelOptionValue}> に Webhook を作成できませんでした。\n理由: \n>>> ${webhookCreationResult.message}`,
+                            `:x: チャンネル ${channelMention(channelOptionValue)} に Webhook を作成できませんでした。\n理由: \n${blockQuote(webhookCreationResult.message)}`,
                         )
                     }
                     guildConfig._loggingWebhook = webhookCreationResult
@@ -348,32 +354,30 @@ export const handler: CommandHandler<Env> = async (c) => {
             // TODO: このあたり共通化する
             const loggingWebhook = guildConfig._loggingWebhook
             if (loggingWebhook) {
-                const loggingWebhookDeletionResult = await rest
-                    .delete(Routes.webhook(loggingWebhook.id))
-                    .catch(id)
-                if (!forceReset && loggingWebhookDeletionResult instanceof DiscordAPIError) {
+                const loggingWebhookDeletionResult = await discord.webhooks
+                    .delete(loggingWebhook.id)
+                    .catch(id<unknown, Error>)
+                if (!forceReset && loggingWebhookDeletionResult instanceof Error) {
                     await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
-                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: Webhook <@${loggingWebhook.id}> を削除することができませんでした。
-理由:
->>> ${loggingWebhookDeletionResult.message}`)
+                    return c.res(
+                        `:x: サーバー設定を正常に初期化できませんでした。\n:arrow_right_hook: Webhook ${userMention(loggingWebhook.id)} を削除することができませんでした。\n理由:\n${blockQuote(loggingWebhookDeletionResult.message)}`,
+                    )
                 }
             }
             const signInButtonWebhook = guildConfig._signInButtonWebhook
             if (signInButtonWebhook) {
-                const signInButtonWebhookDeletionResult = await rest
-                    .delete(Routes.webhook(signInButtonWebhook.id))
-                    .catch(id)
+                const signInButtonWebhookDeletionResult = await discord.webhooks
+                    .delete(signInButtonWebhook.id)
+                    .catch(id<unknown, Error>)
                 if (!forceReset && signInButtonWebhookDeletionResult instanceof DiscordAPIError) {
                     await reportErrorWithContext(
                         signInButtonWebhookDeletionResult,
                         errorContext,
                         c.env,
                     )
-                    return c.res(`:x: サーバー設定を正常に初期化できませんでした。
-:arrow_right_hook: Webhook <@${signInButtonWebhook.id}> を削除することができませんでした。
-理由:
->>> ${signInButtonWebhookDeletionResult.message}`)
+                    return c.res(
+                        `:x: サーバー設定を正常に初期化できませんでした。\n:arrow_right_hook: Webhook ${userMention(signInButtonWebhook.id)} を削除することができませんでした。\n理由:\n${blockQuote(signInButtonWebhookDeletionResult.message)}`,
+                    )
                 }
             }
             await guildConfigRecord.delete(guildId)
@@ -408,8 +412,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                 url: oAuthUrl.href,
             } as const satisfies APIButtonComponentWithURL
             return c.ephemeral(true).res({
-                content: `:person_tipping_hand: アクセス許可が必要です。下のボタンからアプリにアクセス権を与えてください。
-発行されたリンクは ${requestTokenExpirationTtl} 秒間、1 度だけ有効です。`,
+                content: `:person_tipping_hand: アクセス許可が必要です。下のボタンからアプリにアクセス権を与えてください。\n発行されたリンクは ${requestTokenExpirationTtl} 秒間、1 度だけ有効です。`,
                 components: new Components().row(oAuthButtonLink),
             })
         }

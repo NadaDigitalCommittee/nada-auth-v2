@@ -1,9 +1,9 @@
 diff --git a/payloads/v10/user.d.ts b/payloads/v10/user.d.ts
-index a776d0107ee286e22d5840e3409930cbc6114299..2975e7d2b0659c5c79dbb0ea524c78945363f62d 100644
+index 9c1c5179f2a01a9e1dc9736fd754a00ff98cbdb8..df18494522e951e63b044c0e24d643efc8abcdfa 100644
 --- a/payloads/v10/user.d.ts
 +++ b/payloads/v10/user.d.ts
-@@ -100,6 +100,10 @@ export interface APIUser {
-  * https://discord.com/developers/docs/resources/user#user-object-user-flags
+@@ -99,6 +99,10 @@ export interface APIUser {
+  * @see {@link https://discord.com/developers/docs/resources/user#user-object-user-flags}
   */
  export declare enum UserFlags {
 +    /**
@@ -14,7 +14,7 @@ index a776d0107ee286e22d5840e3409930cbc6114299..2975e7d2b0659c5c79dbb0ea524c7894
       * Discord Employee
       */
 diff --git a/payloads/v10/user.js b/payloads/v10/user.js
-index ab3f3fd2e2eff3911ffaaac266c2e0df7193b220..18d3dc50e488696a113ac79bd7c65b49571ab740 100644
+index 0ed4fc9afc1376c6e815be98c3878559cde77f56..ec7ec4eb08c07826e2aa656d2b38a0106e312680 100644
 --- a/payloads/v10/user.js
 +++ b/payloads/v10/user.js
 @@ -9,6 +9,10 @@ exports.ConnectionVisibility = exports.ConnectionService = exports.UserPremiumTy

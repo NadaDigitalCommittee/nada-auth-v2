@@ -26,7 +26,7 @@ export const $NadaAcWorkSpaceStudentUser = v.pipe(
         profile: v.object({
             cohort: v.number(),
             grade: $Grade,
-            gradeDisplay: v.string(),
+            formattedGrade: v.string(),
             class: v.number(),
             number: v.number(),
             firstName: v.string(),

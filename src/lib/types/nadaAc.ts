@@ -12,7 +12,7 @@ export interface NadaAcWorkSpaceStudentUser {
     profile: {
         cohort: number
         grade: Grade
-        gradeDisplay: string
+        formattedGrade: string
         class: number
         number: number
         firstName: string

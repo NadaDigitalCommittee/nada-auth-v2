@@ -1,3 +1,5 @@
+import { API } from "@discordjs/core/http-only"
+import { blockQuote, channelMention, userMention } from "@discordjs/formatters"
 import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
@@ -11,10 +13,8 @@ import {
     InteractionContextType,
     PermissionFlagsBits,
     type RESTPatchAPIWebhookJSONBody,
-    type RESTPatchAPIWebhookResult,
     type RESTPostAPIChannelWebhookJSONBody,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
-    Routes,
 } from "discord-api-types/v10"
 import type { CommandHandler } from "discord-hono"
 import type { ArrayValues } from "type-fest"
@@ -73,7 +73,7 @@ type SetupOptions = ArrayValues<(typeof command)["options"]>
  * @package
  */
 export const handler: CommandHandler<Env> = async (c) => {
-    const rest = new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN)
+    const discord = new API(new REST({ version: "10" }).setToken(c.env.DISCORD_TOKEN))
     const guildConfigRecord = c.env.GuildConfigs
     const { interaction } = c
     if (!isGuildInteraction(interaction)) return c.res(":x: この機能はサーバーでのみ使用できます。")
@@ -147,16 +147,13 @@ export const handler: CommandHandler<Env> = async (c) => {
             avatar: dataUrlFetchResult,
             channel_id: optionValues.channel,
         }
-        const webhookModificationResult = (await rest
-            .patch(Routes.webhook(signInButtonWebhook.id), {
-                body: webhookJsonBody satisfies RESTPatchAPIWebhookJSONBody,
-            })
-            .catch(id)) as RESTPatchAPIWebhookResult | DiscordAPIError
+        const webhookModificationResult = await discord.webhooks
+            .edit(signInButtonWebhook.id, webhookJsonBody)
+            .catch(id<unknown, DiscordAPIError>)
         if (webhookModificationResult instanceof DiscordAPIError) {
             await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
             return c.res(
-                `:x: Webhook <@${signInButtonWebhook.id}> を更新することができませんでした。\
-この問題が続く場合、サーバー設定の 連携サービス > nada-auth でこの Webhook を削除してみてください。理由: \n>>> ${webhookModificationResult.message}`,
+                `:x: Webhook ${userMention(signInButtonWebhook.id)} を更新することができませんでした。この問題が続く場合、サーバー設定の 連携サービス > nada-auth でこの Webhook を削除してみてください。理由: \n${blockQuote(webhookModificationResult.message)}`,
             )
         }
         guildConfig._signInButtonWebhook = webhookModificationResult
@@ -165,15 +162,13 @@ export const handler: CommandHandler<Env> = async (c) => {
             name: optionValues.username ?? "nada-auth",
             avatar: dataUrlFetchResult,
         }
-        const webhookCreationResult = (await rest
-            .post(Routes.channelWebhooks(optionValues.channel), {
-                body: webhookJsonBody satisfies RESTPostAPIChannelWebhookJSONBody,
-            })
-            .catch(id)) as RESTPatchAPIWebhookResult | DiscordAPIError
+        const webhookCreationResult = await discord.channels
+            .createWebhook(optionValues.channel, webhookJsonBody)
+            .catch(id<unknown, DiscordAPIError>)
         if (webhookCreationResult instanceof DiscordAPIError) {
             await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
             return c.res(
-                `:x: チャンネル <#${optionValues.channel}> に Webhook を作成することができませんでした。理由: \n>>> ${webhookCreationResult.message}`,
+                `:x: チャンネル ${channelMention(optionValues.channel)} に Webhook を作成することができませんでした。理由: \n${blockQuote(webhookCreationResult.message)}`,
             )
         }
         guildConfig._signInButtonWebhook = webhookCreationResult

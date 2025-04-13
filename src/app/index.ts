@@ -7,7 +7,7 @@ import { api } from "./api"
 import { invite } from "./invite"
 import { oauth } from "./oauth"
 
-import { discordRest } from "@/lib/middleware/discordRest"
+import { discordAPI } from "@/lib/middleware/discordAPI"
 import { envVarsValidator } from "@/lib/middleware/envVarsValidator"
 import type { Env } from "@/lib/schema/env"
 import { isContentfulStatusCode } from "@/lib/utils/misc"
@@ -28,7 +28,7 @@ const assetsHandler: H<Env> = async (c) => {
 
 const app = new Hono()
     .use(envVarsValidator)
-    .use(discordRest)
+    .use(discordAPI)
     .use(secureHeaders())
     .get("/", (c) => c.redirect("https://github.com/NadaDigitalCommittee/nada-auth-v2"))
     .route("/api", api)
