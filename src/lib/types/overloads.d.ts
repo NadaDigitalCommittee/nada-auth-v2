@@ -76,6 +76,7 @@ declare global {
 
     interface ReadonlyMap<K, V> {
         get(key: K): V
+        has(key: unknown): key is K
     }
 
     // es2015.collection

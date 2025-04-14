@@ -171,3 +171,5 @@ export class Logger {
 export type CommandInteractionDataBasicOptionTypeToOptionValueType<
     T extends APIApplicationCommandInteractionDataBasicOption["type"],
 > = Extract<APIApplicationCommandInteractionDataBasicOption, { type: T }>["value"]
+
+export const quoteEachLine = (content: string) => content.replace(/^/gm, "> ")

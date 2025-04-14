@@ -1,5 +1,5 @@
 import { API } from "@discordjs/core/http-only"
-import { blockQuote, channelMention, subtext, userMention } from "@discordjs/formatters"
+import { blockQuote, channelMention, inlineCode, subtext, userMention } from "@discordjs/formatters"
 import { DiscordAPIError, REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
@@ -8,7 +8,9 @@ import {
 import {
     type APIApplicationCommandBasicOption,
     type APIApplicationCommandInteractionDataBooleanOption,
+    type APIApplicationCommandInteractionDataStringOption,
     type APIApplicationCommandInteractionDataSubcommandGroupOption,
+    type APIApplicationCommandStringOption,
     type APIApplicationCommandSubcommandOption,
     type APIButtonComponentWithURL,
     type APIEmbedField,
@@ -40,13 +42,14 @@ import {
     type CommandInteractionDataBasicOptionTypeToOptionValueType,
     type ErrorContext,
     prettifyOptionValue,
+    quoteEachLine,
     reportErrorWithContext,
 } from "../utils"
 
 import type { AppType } from "@/app"
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, type GuildConfig, type SheetsOAuthSession } from "@/lib/schema/kvNamespaces"
-import type { MapKeyOf } from "@/lib/types/utils/map"
+import type { MapKeyOf, MapValueOf } from "@/lib/types/utils/map"
 import { id } from "@/lib/utils/fp"
 import { generateSecret } from "@/lib/utils/secret"
 
@@ -99,6 +102,21 @@ const configSetOptions = [
     }
 >
 
+const configOptionBase = {
+    type: ApplicationCommandOptionType.String,
+    name: "name",
+    description: "設定項目",
+    autocomplete: false,
+    choices: [...guildConfigOptionNameToKvKeyMap.keys().map((name) => ({ name, value: name }))],
+} as const satisfies APIApplicationCommandStringOption
+
+const configGetOptions = [
+    { ...configOptionBase, required: false },
+] as const satisfies APIApplicationCommandStringOption[]
+const configResetOptions = [
+    { ...configOptionBase, required: true },
+] as const satisfies APIApplicationCommandStringOption[]
+
 type ConfigSetOption = ArrayValues<typeof configSetOptions>
 
 /**
@@ -115,6 +133,7 @@ export const command = {
             name: "get",
             description: "Bot のサーバー設定を確認します。",
             type: ApplicationCommandOptionType.Subcommand,
+            options: configGetOptions,
         },
         {
             name: "set",
@@ -126,13 +145,7 @@ export const command = {
             name: "reset",
             description: "Bot のサーバー設定を初期化します。",
             type: ApplicationCommandOptionType.Subcommand,
-            options: [
-                {
-                    name: "force",
-                    description: "エラーを無視して初期化します。既定で無効です。",
-                    type: ApplicationCommandOptionType.Boolean,
-                },
-            ],
+            options: configResetOptions,
         },
         {
             name: "sheets",
@@ -191,7 +204,12 @@ type GuildConfigOptionNameToOptionValueType<T extends ConfigSetOption["name"]> =
         Extract<ConfigSetOption, { name: T }>["options"][0]["type"]
     >
 
-const generateConfigTableEmbed = (config: GuildConfig) =>
+const generateConfigTableEmbed = (
+    config: GuildConfig,
+    keys: MapValueOf<typeof guildConfigOptionNameToKvKeyMap>[] = [
+        ...guildConfigOptionNameToKvKeyMap.values(),
+    ],
+) =>
     new Embed().fields(
         ...Object.entries({ ...guildConfigInit, ...config }).reduce((acc, cur) => {
             const isInternalConfigEntry = (
@@ -199,6 +217,7 @@ const generateConfigTableEmbed = (config: GuildConfig) =>
             ): entry is [`_${string}`, unknown] => entry[0].startsWith("_")
             if (!isInternalConfigEntry(cur)) {
                 const [configKvKey, optionValue] = cur
+                if (!keys.includes(configKvKey)) return acc
                 const optionName = guildConfigKvKeyToOptionNameMap.get(configKvKey)
                 const optionValueType = guildConfigOptionNameToOptionTypeMap.get(optionName)
                 acc.push({
@@ -260,8 +279,22 @@ export const handler: CommandHandler<Env> = async (c) => {
     // TODO: リテラルではなく、commandから生成
     // TODO: ネストを浅くする
     switch (c.sub.string) {
-        case "get":
-            return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
+        case "get": {
+            const [{ options: configGetOptionData }] = options as [
+                {
+                    name: "get"
+                    type: ApplicationCommandOptionType.Subcommand
+                    options: [APIApplicationCommandInteractionDataStringOption] | []
+                },
+            ]
+            const configOption = configGetOptionData[0]?.value
+            if (!configOption) return c.res({ embeds: [generateConfigTableEmbed(guildConfig)] })
+            if (!guildConfigOptionNameToKvKeyMap.has(configOption)) {
+                return c.res("この設定はサポートされていません。")
+            }
+            const guildConfigKvKey = guildConfigOptionNameToKvKeyMap.get(configOption)
+            return c.res({ embeds: [generateConfigTableEmbed(guildConfig, [guildConfigKvKey])] })
+        }
         case "set logging-channel":
         case "set strict":
         case "set profile-fallback": {
@@ -343,47 +376,40 @@ export const handler: CommandHandler<Env> = async (c) => {
             })
         }
         case "reset": {
-            const [{ options: configResetOptions }] = options as [
+            const [{ options: configResetOptionData }] = options as [
                 {
-                    name: string
+                    name: "reset"
                     type: ApplicationCommandOptionType.Subcommand
-                    options: [APIApplicationCommandInteractionDataBooleanOption] | []
+                    options: [APIApplicationCommandInteractionDataStringOption] | []
                 },
             ]
-            const forceReset = configResetOptions[0]?.value ?? false
-            // TODO: このあたり共通化する
+            const configOption = configResetOptionData[0]?.value
+            if (!configOption) return c.res("オプション `name` は必須です。")
+            if (!guildConfigOptionNameToKvKeyMap.has(configOption)) {
+                return c.res("この設定はサポートされていません。")
+            }
+            const guildConfigKvKey = guildConfigOptionNameToKvKeyMap.get(configOption)
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- guildConfigKvKeyはguildConfigOptionNameToKvKeyMapの値であることが保証されている
+            delete guildConfig[guildConfigKvKey]
             const loggingWebhook = guildConfig._loggingWebhook
-            if (loggingWebhook) {
-                const loggingWebhookDeletionResult = await discord.webhooks
-                    .delete(loggingWebhook.id)
-                    .catch(id<unknown, Error>)
-                if (!forceReset && loggingWebhookDeletionResult instanceof Error) {
-                    await reportErrorWithContext(loggingWebhookDeletionResult, errorContext, c.env)
-                    return c.res(
-                        `:x: サーバー設定を正常に初期化できませんでした。\n:arrow_right_hook: Webhook ${userMention(loggingWebhook.id)} を削除することができませんでした。\n理由:\n${blockQuote(loggingWebhookDeletionResult.message)}`,
-                    )
-                }
+            const errors: string[] = []
+            if (guildConfigKvKey === "loggingChannelId" && loggingWebhook) {
+                await discord.webhooks.delete(loggingWebhook.id).catch(async (e: unknown) => {
+                    if (e instanceof DiscordAPIError) {
+                        await reportErrorWithContext(e, errorContext, c.env)
+                        errors.push(
+                            `:x: Webhook ${userMention(loggingWebhook.id)} を削除することができませんでした。\n理由:\n${quoteEachLine(e.message)}`,
+                        )
+                    }
+                })
+                delete guildConfig._loggingWebhook
             }
-            const signInButtonWebhook = guildConfig._signInButtonWebhook
-            if (signInButtonWebhook) {
-                const signInButtonWebhookDeletionResult = await discord.webhooks
-                    .delete(signInButtonWebhook.id)
-                    .catch(id<unknown, Error>)
-                if (!forceReset && signInButtonWebhookDeletionResult instanceof DiscordAPIError) {
-                    await reportErrorWithContext(
-                        signInButtonWebhookDeletionResult,
-                        errorContext,
-                        c.env,
-                    )
-                    return c.res(
-                        `:x: サーバー設定を正常に初期化できませんでした。\n:arrow_right_hook: Webhook ${userMention(signInButtonWebhook.id)} を削除することができませんでした。\n理由:\n${blockQuote(signInButtonWebhookDeletionResult.message)}`,
-                    )
-                }
-            }
-            await guildConfigRecord.delete(guildId)
+            await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
             return c.res({
-                content: ":white_check_mark: サーバー設定が初期化されました。",
-                embeds: [generateConfigTableEmbed(guildConfigInit)],
+                content: `:white_check_mark: サーバー設定 ${inlineCode(configOption)} が初期化されました。${
+                    errors.length ? "\n\n" + errors.join("\n") : ""
+                }`,
+                embeds: [generateConfigTableEmbed(guildConfig, [guildConfigKvKey])],
             })
         }
         case "sheets init": {
