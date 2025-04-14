@@ -55,7 +55,7 @@ export const Core = ({ formAction, ...credentials }: { formAction: string } & Cr
         if (!gapiLoaded) throw new Error("Google API is not loaded yet")
         if (!credentials.accessToken) throw new Error("Missing Credentials: accessToken")
         const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-            .setEnableDrives(true)
+            // .setEnableDrives(true)
             .setSelectFolderEnabled(true)
             .setMode(google.picker.DocsViewMode.LIST)
 
