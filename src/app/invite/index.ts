@@ -3,7 +3,7 @@ import { Hono } from "hono"
 
 import type { Env } from "@/lib/schema/env"
 
-const oAuth2UrlOf = (() => {
+const app = new Hono<Env>().get("/", (c) => {
     const permissions =
         PermissionFlagsBits.ManageRoles |
         PermissionFlagsBits.ManageWebhooks |
@@ -15,16 +15,10 @@ const oAuth2UrlOf = (() => {
         permissions: `${permissions}`,
         integration_type: `${ApplicationIntegrationType.GuildInstall}`,
         scope: "bot",
+        client_id: c.env.DISCORD_APPLICATION_ID,
     }).toString()
-    return (clientId: string) => {
-        oAuth2Url.searchParams.set("client_id", clientId)
-        return oAuth2Url
-    }
-})()
-
-const app = new Hono<Env>().get("/", (c) =>
-    c.redirect(oAuth2UrlOf(c.env.DISCORD_APPLICATION_ID), 301),
-)
+    return c.redirect(oAuth2Url, 301)
+})
 
 /**
  * @package
