@@ -12,8 +12,6 @@ import {
     ChannelType,
     InteractionContextType,
     PermissionFlagsBits,
-    type RESTPatchAPIWebhookJSONBody,
-    type RESTPostAPIChannelWebhookJSONBody,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord-api-types/v10"
 import type { CommandHandler } from "discord-hono"
@@ -100,10 +98,10 @@ export const handler: CommandHandler<Env> = async (c) => {
         const commandOptionData = interactionDataOptions.find((o) => o.name === optionName)
         if (commandOptionDef?.type === commandOptionData?.type) return commandOptionData?.value
     }
-    const optionValues = Object.fromEntries(
+    const { channel, avatar, username } = Object.fromEntries(
         command.options.map((o) => [o.name, getOptionValue(o.name)]),
     )
-    if (!optionValues.channel)
+    if (!channel)
         return c.res(":x: 必須オプション `channel` の形式が不正であるか、与えられませんでした。")
     const rawGuildConfig = await guildConfigRecord.get(guildId, "json").catch(id)
     if (rawGuildConfig instanceof Error) {
@@ -125,10 +123,8 @@ export const handler: CommandHandler<Env> = async (c) => {
     }
     const guildConfig = guildConfigParseResult.output
     const signInButtonWebhook = guildConfig._signInButtonWebhook
-    const avatarAttachment =
-        optionValues.avatar && interactionDataResolved?.attachments?.[optionValues.avatar]
-    if (optionValues.avatar && !avatarAttachment)
-        return c.res(":x: 添付ファイルを取得できませんでした。")
+    const avatarAttachment = avatar && interactionDataResolved?.attachments?.[avatar]
+    if (avatar && !avatarAttachment) return c.res(":x: 添付ファイルを取得できませんでした。")
     const fetchAvatarDataUrl = async () => {
         if (!avatarAttachment) return null
         const dataUrl = await generateDataUrlFromHttpUrl(avatarAttachment.url).catch(orNull)
@@ -141,39 +137,46 @@ export const handler: CommandHandler<Env> = async (c) => {
     }
     const dataUrlFetchResult = await fetchAvatarDataUrl()
     if (dataUrlFetchResult instanceof Error) return c.res(dataUrlFetchResult.message)
+    const errors: string[] = []
     if (signInButtonWebhook) {
-        const webhookJsonBody: RESTPatchAPIWebhookJSONBody = {
-            name: optionValues.username ?? "nada-auth",
-            avatar: dataUrlFetchResult,
-            channel_id: optionValues.channel,
-        }
-        const webhookModificationResult = await discord.webhooks
-            .edit(signInButtonWebhook.id, webhookJsonBody)
-            .catch(id<unknown, DiscordAPIError>)
-        if (webhookModificationResult instanceof DiscordAPIError) {
-            await reportErrorWithContext(webhookModificationResult, errorContext, c.env)
-            return c.res(
-                `:x: Webhook ${userMention(signInButtonWebhook.id)} を更新することができませんでした。この問題が続く場合、サーバー設定の 連携サービス > nada-auth でこの Webhook を削除してみてください。理由: \n${blockQuote(webhookModificationResult.message)}`,
-            )
-        }
-        guildConfig._signInButtonWebhook = webhookModificationResult
+        await discord.webhooks
+            .edit(signInButtonWebhook.id, {
+                name: username ?? "nada-auth",
+                avatar: dataUrlFetchResult,
+                channel_id: channel,
+            })
+            .then((webhook) => {
+                guildConfig._signInButtonWebhook = webhook
+            })
+            .catch(async (e: unknown) => {
+                if (e instanceof DiscordAPIError) {
+                    await reportErrorWithContext(e, errorContext, c.env)
+                    errors.push(
+                        `:x: Webhook ${userMention(signInButtonWebhook.id)} を更新することができませんでした。理由: \n${blockQuote(e.message)}`,
+                    )
+                    delete guildConfig._signInButtonWebhook
+                }
+            })
     } else {
-        const webhookJsonBody: RESTPostAPIChannelWebhookJSONBody = {
-            name: optionValues.username ?? "nada-auth",
-            avatar: dataUrlFetchResult,
-        }
-        const webhookCreationResult = await discord.channels
-            .createWebhook(optionValues.channel, webhookJsonBody)
-            .catch(id<unknown, DiscordAPIError>)
-        if (webhookCreationResult instanceof DiscordAPIError) {
-            await reportErrorWithContext(webhookCreationResult, errorContext, c.env)
-            return c.res(
-                `:x: チャンネル ${channelMention(optionValues.channel)} に Webhook を作成することができませんでした。理由: \n${blockQuote(webhookCreationResult.message)}`,
-            )
-        }
-        guildConfig._signInButtonWebhook = webhookCreationResult
+        await discord.channels
+            .createWebhook(channel, {
+                name: username ?? "nada-auth",
+                avatar: dataUrlFetchResult,
+            })
+            .then((webhook) => {
+                guildConfig._signInButtonWebhook = webhook
+            })
+            .catch(async (e: unknown) => {
+                if (e instanceof DiscordAPIError) {
+                    await reportErrorWithContext(e, errorContext, c.env)
+                    errors.push(
+                        `:x: チャンネル ${channelMention(channel)} に Webhook を作成することができませんでした。理由: \n${blockQuote(e.message)}`,
+                    )
+                }
+            })
     }
     await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
 
+    if (errors.length) return c.res(errors.join("\n"))
     return c.resModal(Modals.init.modal)
 }
