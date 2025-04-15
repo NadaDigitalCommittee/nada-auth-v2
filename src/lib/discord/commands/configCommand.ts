@@ -166,7 +166,7 @@ export const command = {
                     options: [],
                 },
                 {
-                    name: "revoke",
+                    name: "unlink",
                     description: "スプレッドシートとの連携を解除します。",
                     type: ApplicationCommandOptionType.Subcommand,
                     options: [
@@ -456,7 +456,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                 components: new Components().row(sheetButtonLink),
             })
         }
-        case "sheets revoke": {
+        case "sheets unlink": {
             if (!guildConfig._sheet?.spreadsheetId) {
                 return c.res(":warning: 連携されているスプレッドシートがありません。")
             }
