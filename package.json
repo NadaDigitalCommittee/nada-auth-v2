@@ -34,7 +34,7 @@
         "crypto-browserify": "^3.12.1",
         "decode-formdata": "^0.9.0",
         "discord-api-types": "^0.37.120",
-        "discord-hono": "^0.16.4",
+        "discord-hono": "^0.16.5",
         "google-auth-library": "^9.15.1",
         "googleapis": "^148.0.0",
         "hono": "^4.7.6",
