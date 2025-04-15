@@ -1,6 +1,6 @@
 import { API } from "@discordjs/core/http-only"
-import { blockQuote, channelMention, inlineCode, subtext, userMention } from "@discordjs/formatters"
-import { DiscordAPIError, REST } from "@discordjs/rest"
+import { blockQuote, channelMention, subtext, userMention } from "@discordjs/formatters"
+import { REST } from "@discordjs/rest"
 import {
     isChatInputApplicationCommandInteraction,
     isGuildInteraction,
@@ -42,7 +42,6 @@ import {
     type CommandInteractionDataBasicOptionTypeToOptionValueType,
     type ErrorContext,
     prettifyOptionValue,
-    quoteEachLine,
     reportErrorWithContext,
 } from "../utils"
 
@@ -113,9 +112,6 @@ const configOptionBase = {
 const configGetOptions = [
     { ...configOptionBase, required: false },
 ] as const satisfies APIApplicationCommandStringOption[]
-const configResetOptions = [
-    { ...configOptionBase, required: true },
-] as const satisfies APIApplicationCommandStringOption[]
 
 type ConfigSetOption = ArrayValues<typeof configSetOptions>
 
@@ -140,12 +136,6 @@ export const command = {
             description: "Bot のサーバー設定を変更します。",
             type: ApplicationCommandOptionType.SubcommandGroup,
             options: configSetOptions,
-        },
-        {
-            name: "reset",
-            description: "Bot のサーバー設定を初期化します。",
-            type: ApplicationCommandOptionType.Subcommand,
-            options: configResetOptions,
         },
         {
             name: "sheets",
@@ -260,8 +250,9 @@ export const handler: CommandHandler<Env> = async (c) => {
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {
         await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
+        void guildConfigRecord.delete(guildId)
         return c.res(
-            ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。",
+            ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。設定は初期化されました。",
         )
     }
     const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
@@ -271,8 +262,9 @@ export const handler: CommandHandler<Env> = async (c) => {
             errorContext,
             c.env,
         )
+        void guildConfigRecord.delete(guildId)
         return c.res(
-            ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。",
+            ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。設定は初期化されました。",
         )
     }
     const guildConfig = guildConfigParseResult.output
@@ -373,43 +365,6 @@ export const handler: CommandHandler<Env> = async (c) => {
             return c.res({
                 content: ":white_check_mark: サーバー設定が更新されました。",
                 embeds: [generateConfigTableEmbed(guildConfig)],
-            })
-        }
-        case "reset": {
-            const [{ options: configResetOptionData }] = options as [
-                {
-                    name: "reset"
-                    type: ApplicationCommandOptionType.Subcommand
-                    options: [APIApplicationCommandInteractionDataStringOption] | []
-                },
-            ]
-            const configOption = configResetOptionData[0]?.value
-            if (!configOption) return c.res("オプション `name` は必須です。")
-            if (!guildConfigOptionNameToKvKeyMap.has(configOption)) {
-                return c.res("この設定はサポートされていません。")
-            }
-            const guildConfigKvKey = guildConfigOptionNameToKvKeyMap.get(configOption)
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- guildConfigKvKeyはguildConfigOptionNameToKvKeyMapの値であることが保証されている
-            delete guildConfig[guildConfigKvKey]
-            const loggingWebhook = guildConfig._loggingWebhook
-            const errors: string[] = []
-            if (guildConfigKvKey === "loggingChannelId" && loggingWebhook) {
-                await discord.webhooks.delete(loggingWebhook.id).catch(async (e: unknown) => {
-                    if (e instanceof DiscordAPIError) {
-                        await reportErrorWithContext(e, errorContext, c.env)
-                        errors.push(
-                            `:x: Webhook ${userMention(loggingWebhook.id)} を削除することができませんでした。\n理由:\n${quoteEachLine(e.message)}`,
-                        )
-                    }
-                })
-                delete guildConfig._loggingWebhook
-            }
-            await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
-            return c.res({
-                content: `:white_check_mark: サーバー設定 ${inlineCode(configOption)} が初期化されました。${
-                    errors.length ? "\n\n" + errors.join("\n") : ""
-                }`,
-                embeds: [generateConfigTableEmbed(guildConfig, [guildConfigKvKey])],
             })
         }
         case "sheets init": {
