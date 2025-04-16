@@ -24,7 +24,7 @@ import { generateSecret } from "@/lib/utils/secret"
  */
 export const component = {
     custom_id: "signIn",
-    label: "認証を受ける",
+    label: "認証",
     type: ComponentType.Button,
     style: ButtonStyle.Primary,
 } as const satisfies APIButtonComponentWithCustomId

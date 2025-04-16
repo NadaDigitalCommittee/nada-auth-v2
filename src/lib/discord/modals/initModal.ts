@@ -32,7 +32,7 @@ export const modal = {
                 {
                     type: ComponentType.TextInput,
                     custom_id: "button-label",
-                    label: "ボタンのラベル（既定値: 認証を受ける）",
+                    label: "ボタンのラベル（既定値: 「認証」）",
                     style: TextInputStyle.Short,
                     required: false,
                 },
