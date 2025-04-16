@@ -15,6 +15,7 @@ import {
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord-api-types/v10"
 import type { CommandHandler } from "discord-hono"
+import { Buffer } from "node:buffer"
 import type { ArrayValues } from "type-fest"
 import * as v from "valibot"
 
@@ -28,9 +29,7 @@ import { type ErrorContext, reportErrorWithContext } from "../utils"
 
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig } from "@/lib/schema/kvNamespaces"
-import { orNull } from "@/lib/utils/exceptions"
 import { id } from "@/lib/utils/fp"
-import { generateDataUrlFromHttpUrl } from "@/lib/utils/misc"
 
 /**
  * @package
@@ -127,13 +126,16 @@ export const handler: CommandHandler<Env> = async (c) => {
     if (avatar && !avatarAttachment) return c.res(":x: 添付ファイルを取得できませんでした。")
     const fetchAvatarDataUrl = async () => {
         if (!avatarAttachment) return null
-        const dataUrl = await generateDataUrlFromHttpUrl(avatarAttachment.url).catch(orNull)
-        if (!dataUrl) return new Error(":x: 添付ファイルを取得できませんでした。")
-        if (!new RegExp(`data:${DISCORD_AVATAR_IMAGE_ALLOWED_MIME.source}`).test(dataUrl))
+        const response = await fetch(avatarAttachment.url).catch(id<unknown>)
+        if (!(response instanceof Response) || !response.ok)
+            return new Error(":x: 添付ファイルを取得できませんでした。")
+        const mime = response.headers.get("Content-Type")
+        if (!mime) return new Error(":x: 添付ファイルを取得できませんでした。")
+        if (!DISCORD_AVATAR_IMAGE_ALLOWED_MIME.test(mime))
             return new Error(
                 ":warning: アバター画像としてこの形式のファイルを設定することはできません。",
             )
-        return dataUrl
+        return `data:${mime};base64,${Buffer.from(await response.arrayBuffer()).toString("base64")}`
     }
     const dataUrlFetchResult = await fetchAvatarDataUrl()
     if (dataUrlFetchResult instanceof Error) return c.res(dataUrlFetchResult.message)
