@@ -67,7 +67,7 @@ const app = new Hono<Env>().post(
         const { folderId } = c.req.valid("form")
         const sessionId = c.req.valid("cookie").sid
         const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
-        await sessionRecord.delete(sessionId)
+        c.executionCtx.waitUntil(sessionRecord.delete(sessionId))
         const sessionParseResult = v.safeParse($SheetsOAuthSession, rawSession)
         if (!sessionParseResult.success) {
             c.status(400)
@@ -177,7 +177,9 @@ const app = new Hono<Env>().post(
             )
         }
         guildConfig._sheet.spreadsheetId = spreadsheetId
-        await guildConfigRecord.put(session.guildId, JSON.stringify(guildConfig))
+        c.executionCtx.waitUntil(
+            guildConfigRecord.put(session.guildId, JSON.stringify(guildConfig)),
+        )
         return c.render(
             <>
                 <SuccessAlert>スプレッドシートが作成され、初期化されました。</SuccessAlert>

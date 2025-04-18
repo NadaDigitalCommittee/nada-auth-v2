@@ -177,7 +177,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                 }
             })
     }
-    await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
+    c.executionCtx.waitUntil(guildConfigRecord.put(guildId, JSON.stringify(guildConfig)))
 
     if (errors.length) return c.res(errors.join("\n"))
     return c.resModal(Modals.init.modal)

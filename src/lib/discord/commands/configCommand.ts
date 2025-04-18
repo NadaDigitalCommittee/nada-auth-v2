@@ -250,7 +250,7 @@ export const handler: CommandHandler<Env> = async (c) => {
     // TODO: テストを書く😭
     if (rawGuildConfig instanceof Error) {
         await reportErrorWithContext(rawGuildConfig, errorContext, c.env)
-        void guildConfigRecord.delete(guildId)
+        c.executionCtx.waitUntil(guildConfigRecord.delete(guildId))
         return c.res(
             ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。設定は初期化されました。",
         )
@@ -262,7 +262,7 @@ export const handler: CommandHandler<Env> = async (c) => {
             errorContext,
             c.env,
         )
-        void guildConfigRecord.delete(guildId)
+        c.executionCtx.waitUntil(guildConfigRecord.delete(guildId))
         return c.res(
             ":x: サーバーの設定データを正しく読み取れなかったため、インタラクションを正常に処理できませんでした。設定は初期化されました。",
         )
@@ -356,10 +356,14 @@ export const handler: CommandHandler<Env> = async (c) => {
                     // この次の処理で loggingChannelId は削除されるので、何もしない
                 }
             }
-            await guildConfigRecord.put(
-                guildId,
-                JSON.stringify(
-                    Object.assign(guildConfig, { [guildConfigKvKey]: subcommandOptionOptionValue }),
+            c.executionCtx.waitUntil(
+                guildConfigRecord.put(
+                    guildId,
+                    JSON.stringify(
+                        Object.assign(guildConfig, {
+                            [guildConfigKvKey]: subcommandOptionOptionValue,
+                        }),
+                    ),
                 ),
             )
             return c.res({
@@ -377,12 +381,18 @@ export const handler: CommandHandler<Env> = async (c) => {
             const requestToken = generateSecret(64)
             const sessionId = generateSecret(64)
             const session: SheetsOAuthSession = { guildId, interactionToken }
-            await c.env.AuthNRequests.put(`requestToken:${requestToken}`, sessionId, {
-                expirationTtl: requestTokenExpirationTtl,
-            })
-            await c.env.Sessions.put(sessionId, JSON.stringify(session), {
-                expirationTtl: import.meta.env.DEV ? sessionExpirationTtlDev : sessionExpirationTtl,
-            })
+            c.executionCtx.waitUntil(
+                Promise.all([
+                    c.env.AuthNRequests.put(`requestToken:${requestToken}`, sessionId, {
+                        expirationTtl: requestTokenExpirationTtl,
+                    }),
+                    c.env.Sessions.put(sessionId, JSON.stringify(session), {
+                        expirationTtl: import.meta.env.DEV
+                            ? sessionExpirationTtlDev
+                            : sessionExpirationTtl,
+                    }),
+                ]),
+            )
             const honoClient = hc<AppType>(c.env.ORIGIN)
             const oAuthUrl = honoClient.oauth.sheets.$url({ query: { token: requestToken } })
             const oAuthButtonLink = {
@@ -465,7 +475,7 @@ export const handler: CommandHandler<Env> = async (c) => {
                 }
             }
             delete guildConfig._sheet.spreadsheetId
-            await guildConfigRecord.put(guildId, JSON.stringify(guildConfig))
+            c.executionCtx.waitUntil(guildConfigRecord.put(guildId, JSON.stringify(guildConfig)))
             return c.res(
                 `:white_check_mark: ${hard ? "ファイルがごみ箱に移動され、" : ""}スプレッドシートとの連携が解除されました。`,
             )

@@ -83,7 +83,7 @@ const app = new Hono<Env>().get(
         const query = c.req.valid("query")
         const { state } = query
         const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
-        await sessionRecord.delete(sessionId)
+        c.executionCtx.waitUntil(sessionRecord.delete(sessionId))
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) {
             c.status(400)
@@ -104,24 +104,24 @@ const app = new Hono<Env>().get(
             guildId: session.guildId,
             user: session.user,
         } as const satisfies ErrorContext
-        const editOriginal = async (
-            body: RESTPatchAPIWebhookWithTokenMessageJSONBody,
-        ): Promise<void> => {
-            await c.var.discord.webhooks
-                .editMessage(
-                    c.env.DISCORD_APPLICATION_ID,
-                    session.interactionToken,
-                    "@original",
-                    body,
-                )
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                })
+        const editOriginal = (body: RESTPatchAPIWebhookWithTokenMessageJSONBody) => {
+            c.executionCtx.waitUntil(
+                c.var.discord.webhooks
+                    .editMessage(
+                        c.env.DISCORD_APPLICATION_ID,
+                        session.interactionToken,
+                        "@original",
+                        body,
+                    )
+                    .catch(async (e: unknown) => {
+                        if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
+                    }),
+            )
         }
         const rawGuildConfig = await guildConfigRecord.get(session.guildId, "json").catch(id)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
-            await editOriginal({
+            editOriginal({
                 content: ":x: Discordサーバー側の問題により認証に失敗しました。",
                 components: [],
             })
@@ -134,7 +134,7 @@ const app = new Hono<Env>().get(
         }
         const guildConfig = guildConfigParseResult.output
         if (query.error !== undefined) {
-            await editOriginal({
+            editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
@@ -155,7 +155,7 @@ const app = new Hono<Env>().get(
         }
         const { tokens } = getTokenResponse
         if (!(tokens.id_token && tokens.access_token)) {
-            await editOriginal({
+            editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
@@ -174,7 +174,7 @@ const app = new Hono<Env>().get(
             rawTokenPayload,
         )
         if (!tokenPayloadParseResult.success) {
-            await editOriginal({
+            editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
@@ -187,21 +187,21 @@ const app = new Hono<Env>().get(
         }
         const tokenPayload = tokenPayloadParseResult.output
         if (tokenPayload.nonce !== session.nonce) {
-            await editOriginal({
+            editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
             c.status(401)
             return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
         }
-        await using logger = new Logger({
+        using logger = new Logger({
             context: c,
             webhook: guildConfig._loggingWebhook,
             author: session.user,
             timestampInSeconds: tokenPayload.iat,
         })
         if (!c.env.ALLOWED_EMAIL_DOMAINS.includes(tokenPayload.hd)) {
-            await editOriginal({
+            editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
@@ -232,7 +232,7 @@ const app = new Hono<Env>().get(
                     .join("\n\n") ?? "User bypassed the profile entry process.",
             )
             if (guildConfig.strictIntegrityCheck === true) {
-                await editOriginal({
+                editOriginal({
                     content: AUTHN_FAILED_MESSAGE,
                     components: [],
                 })
@@ -300,7 +300,9 @@ const app = new Hono<Env>().get(
                 guildConfig._sheet.accessToken = credentials.access_token!
                 guildConfig._sheet.accessTokenExpiry = credentials.expiry_date!
                 /* eslint-enable @typescript-eslint/no-non-null-assertion */
-                await c.env.GuildConfigs.put(session.guildId, JSON.stringify(guildConfig))
+                c.executionCtx.waitUntil(
+                    c.env.GuildConfigs.put(session.guildId, JSON.stringify(guildConfig)),
+                )
             }
             const sheets = new sheets_v4.Sheets({ auth: oAuth2Client })
             const spreadsheetMeta = await sheets.spreadsheets
@@ -445,21 +447,23 @@ const app = new Hono<Env>().get(
                         ],
                     })
                 }
-                await c.var.discord.guilds
-                    .editMember(session.guildId, session.user.id, {
-                        nick: nicknameFormatResult.formatted,
-                    })
-                    .catch((e: unknown) => {
-                        logger.error({
-                            title: "Failed to modify nickname",
-                            fields: [
-                                {
-                                    name: "Reason",
-                                    value: getDiscordAPIErrorMessage(e),
-                                },
-                            ],
+                c.executionCtx.waitUntil(
+                    c.var.discord.guilds
+                        .editMember(session.guildId, session.user.id, {
+                            nick: nicknameFormatResult.formatted,
                         })
-                    })
+                        .catch((e: unknown) => {
+                            logger.error({
+                                title: "Failed to modify nickname",
+                                fields: [
+                                    {
+                                        name: "Reason",
+                                        value: getDiscordAPIErrorMessage(e),
+                                    },
+                                ],
+                            })
+                        }),
+                )
             }
             const roleOperationMap = new Map<Snowflake, number>()
             const roleSyntaxErrors: RuleSyntaxError[] = []
@@ -511,21 +515,23 @@ const app = new Hono<Env>().get(
                 rolesHaveChanges = true
             })
             if (!rolesHaveChanges) return
-            await c.var.discord.guilds
-                .editMember(session.guildId, session.user.id, {
-                    roles: [...userRoles],
-                })
-                .catch((e: unknown) => {
-                    logger.error({
-                        title: "Failed to modify roles",
-                        fields: [
-                            {
-                                name: "Reason",
-                                value: getDiscordAPIErrorMessage(e),
-                            },
-                        ],
+            c.executionCtx.waitUntil(
+                c.var.discord.guilds
+                    .editMember(session.guildId, session.user.id, {
+                        roles: [...userRoles],
                     })
-                })
+                    .catch((e: unknown) => {
+                        logger.error({
+                            title: "Failed to modify roles",
+                            fields: [
+                                {
+                                    name: "Reason",
+                                    value: getDiscordAPIErrorMessage(e),
+                                },
+                            ],
+                        })
+                    }),
+            )
         })()
         const embedFields = (() => {
             const { type: userType, profile: userProfile } = nadaACWorkSpaceUser
@@ -568,7 +574,7 @@ const app = new Hono<Env>().get(
             fields: embedFields,
         })
 
-        await editOriginal({
+        editOriginal({
             content: ":white_check_mark: 認証が完了しました。",
             components: [],
         })

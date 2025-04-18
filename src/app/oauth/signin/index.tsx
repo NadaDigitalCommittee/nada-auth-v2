@@ -1,4 +1,3 @@
-import type { WebhooksAPI } from "@discordjs/core/http-only"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import { decode } from "decode-formdata"
@@ -64,7 +63,7 @@ const app = new Hono<Env>()
                     `requestToken:${requestToken}` satisfies keyof AuthNRequestRecord
                 const kvSessionId = await authNRequestRecord.get(kvSessionIdKey)
                 if (kvSessionId) {
-                    await authNRequestRecord.delete(kvSessionIdKey)
+                    c.executionCtx.waitUntil(authNRequestRecord.delete(kvSessionIdKey))
                     setCookie(c, "sid", kvSessionId, {
                         ...sharedCookieOption,
                         sameSite: "Lax",
@@ -140,32 +139,26 @@ const app = new Hono<Env>()
                 nonce,
             })
             Object.assign(session, { state, nonce, userProfile })
-            await sessionRecord.put(sessionId, JSON.stringify(session))
+            c.executionCtx.waitUntil(sessionRecord.put(sessionId, JSON.stringify(session)))
             const errorContext = {
                 guildId: session.guildId,
                 user: session.user,
             } as const satisfies ErrorContext
-            const originalInteractions = [
-                c.env.DISCORD_APPLICATION_ID,
-                session.interactionToken,
-                "@original",
-            ] satisfies Parameters<WebhooksAPI["getMessage"]>
-            const originalResponse = await c.var.discord.webhooks
-                .getMessage(...originalInteractions)
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    return null
-                })
-            if (originalResponse?.components?.length) {
-                await c.var.discord.webhooks
-                    .editMessage(...originalInteractions, {
-                        content: ":tickets: リンクが使用されました。",
-                        components: [],
-                    })
+            c.executionCtx.waitUntil(
+                c.var.discord.webhooks
+                    .editMessage(
+                        c.env.DISCORD_APPLICATION_ID,
+                        session.interactionToken,
+                        "@original",
+                        {
+                            content: ":tickets: リンクが使用されました。",
+                            components: [],
+                        },
+                    )
                     .catch(async (e: unknown) => {
                         if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    })
-            }
+                    }),
+            )
             return c.redirect(authUrl)
         },
     )
