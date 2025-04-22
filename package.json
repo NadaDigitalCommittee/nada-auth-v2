@@ -70,7 +70,7 @@
         "prettier-plugin-toml": "^2.0.4",
         "type-fest": "^4.40.0",
         "typescript": "^5.8.3",
-        "typescript-eslint": "^8.30.1",
+        "typescript-eslint": "^8.31.0",
         "wrangler": "^4.12.0"
     },
     "patchedDependencies": {
