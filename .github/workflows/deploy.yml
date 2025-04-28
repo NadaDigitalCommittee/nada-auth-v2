@@ -11,7 +11,7 @@ jobs:
         name: Deploy
         steps:
             - uses: actions/checkout@v4
-            - uses: oven-sh/setup-bun@v2.0.1
+            - uses: oven-sh/setup-bun@v2.0.2
             - run: bun i --frozen-lockfile
             - run: bun build:client
             - uses: cloudflare/wrangler-action@v3.14.1
