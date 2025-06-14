@@ -1,11 +1,13 @@
 import type {
     APIMessageComponent,
+    APIModalInteractionResponseCallbackData,
     RESTPostAPIApplicationCommandsJSONBody,
 } from "discord-api-types/v10"
+import type { CommandHandler, ComponentHandler, ModalHandler } from "discord-hono"
 import type { Join } from "type-fest"
+import type { JoinableItem } from "type-fest/source/join"
 
 import type { Commands, Components, Modals } from "."
-import type { CommandHandler, ComponentHandler, ModalHandler } from "./types"
 
 import type { UnknownEnv } from "@/lib/schema/env"
 import type { ReadonlyForEach } from "@/lib/types/utils/readonlyForEach"
@@ -24,7 +26,7 @@ type PathTuple<
       }[KeyT]
     : never
 type DotPath<T extends Record<string, unknown>, TEndpoint extends Record<string, unknown>> = Join<
-    PathTuple<T, TEndpoint>,
+    Extract<PathTuple<T, TEndpoint>, readonly JoinableItem[]>,
     "."
 >
 
@@ -35,7 +37,7 @@ type CommandNSSchema = {
 
 type ComponentNSSchema = {
     component: APIMessageComponent
-    handler: ComponentHandler<UnknownEnv>
+    handler: ComponentHandler<UnknownEnv, never>
 }
 
 type ModalNSSchema = {
