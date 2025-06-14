@@ -24,7 +24,7 @@ export const $EnvVars = v.object({
     DISCORD_PUBLIC_KEY: v.string(),
     DISCORD_APPLICATION_EMOJIS: v.union([
         $DiscordApplicationEmojis, // 2回目以降の読み込み
-        v.pipe(v.string(), v.transform(JSON.parse), $DiscordApplicationEmojis), // 初回の読み込み
+        v.pipe(v.string(), v.parseJson(), $DiscordApplicationEmojis), // 初回の読み込み
     ]),
     GOOGLE_OAUTH_CLIENT_ID: v.string(),
     GOOGLE_OAUTH_CLIENT_SECRET: v.string(),
@@ -32,7 +32,7 @@ export const $EnvVars = v.object({
     GOOGLE_CLOUD_PROJECT_NUMBER: v.string(),
     ALLOWED_EMAIL_DOMAINS: v.union([
         $AllowedEmailDomains,
-        v.pipe(v.string(), v.transform(JSON.parse), $AllowedEmailDomains),
+        v.pipe(v.string(), v.parseJson(), $AllowedEmailDomains),
     ]),
     ORIGIN: v.string(),
 })
