@@ -14,7 +14,6 @@ import { appSteps } from "../steps"
 
 import type { AppType } from "@/app"
 import { App } from "@/components/App"
-import { ErrorAlert } from "@/components/ErrorAlert"
 import { SuccessAlert } from "@/components/SuccessAlert"
 import { createLayout } from "@/components/layout"
 import { guildConfigInit } from "@/lib/discord/constants"

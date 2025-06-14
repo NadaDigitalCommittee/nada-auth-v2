@@ -12,7 +12,6 @@ import * as v from "valibot"
 import { appSteps } from "../steps"
 
 import { App } from "@/components/App"
-import { ErrorAlert } from "@/components/ErrorAlert"
 import { NotchedOutline } from "@/components/NotchedOutline"
 import { SuccessAlert } from "@/components/SuccessAlert"
 import { createLayout } from "@/components/layout"

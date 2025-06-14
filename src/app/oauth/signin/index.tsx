@@ -103,9 +103,7 @@ const app = new Hono<Env>()
                 c.status(400)
                 return c.render(
                     <>
-                        <ErrorAlert title="Bad Request">
-                            フォームの入力内容が正しくありません。
-                        </ErrorAlert>
+                        <ErrorAlert>フォームの入力内容が正しくありません。</ErrorAlert>
                         <ProfileForm />
                     </>,
                 )

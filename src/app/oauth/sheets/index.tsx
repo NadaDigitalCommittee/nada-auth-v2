@@ -13,7 +13,6 @@ import { appSteps } from "./steps"
 
 import type { AppType } from "@/app"
 import { App } from "@/components/App"
-import { ErrorAlert } from "@/components/ErrorAlert"
 import { createLayout } from "@/components/layout"
 import type { Env } from "@/lib/schema/env"
 import { $RequestToken, $SheetsOAuthSession, type AuthNRequest } from "@/lib/schema/kvNamespaces"
