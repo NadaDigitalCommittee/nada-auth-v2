@@ -1,5 +1,5 @@
 import { Box, Button, FormControlLabel, Stack, Tooltip, css } from "@mui/material"
-import { useEffect, useRef, useState, useSyncExternalStore } from "react"
+import { useRef, useState, useSyncExternalStore } from "react"
 import {
     CheckboxElement,
     SelectElement,
@@ -20,7 +20,6 @@ import { vFormFieldValidator } from "@/lib/schema/utils"
 import { type Grade, NadaAcWorkSpaceUserType } from "@/lib/types/nadaAc"
 import { getJstAcademicYear } from "@/lib/utils/date"
 import { calcCohortFromGrade } from "@/lib/utils/nadaAc"
-import { objectPaths } from "@/lib/utils/object"
 import { exclusiveRange } from "@/lib/utils/range"
 
 /**
@@ -54,8 +53,7 @@ type ProfileFormData = v.InferOutput<typeof $ProfileFormData>
 export const Core = () => {
     const {
         control,
-        formState: { isValid, dirtyFields },
-        trigger,
+        formState: { isValid },
     } = useForm<ProfileFormData>({
         mode: "onChange",
         reValidateMode: "onChange",
@@ -79,16 +77,6 @@ export const Core = () => {
         () => 0,
     )
     const isStudent = useWatch({ name: "isStudent", control })
-
-    // CheckboxElementのonChangeでトリガーするとRHFとReactが競合して4, 5回再レンダリングされてしまう上に、古いデータを参照することがある
-    useEffect(() => {
-        void trigger(
-            objectPaths(dirtyFields, {
-                fullPathOnly: true,
-            }),
-        )
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- dirtyFieldsは更新されると自動で再トリガーされる / triggerは更新を監視する対象ではない
-    }, [isStudent])
 
     const CurrentFormDataSchema = isStudent ? $StudentProfileFormData : $NonStudentProfileFormData
     // 本来いらないが、型推論のために必要
@@ -135,6 +123,7 @@ export const Core = () => {
                         required
                         control={control}
                         rules={{
+                            deps: "isStudent",
                             required: "必須",
                         }}
                         options={[...exclusiveRange(6, 0)].map((grade) => {
@@ -156,6 +145,7 @@ export const Core = () => {
                         required
                         control={control}
                         rules={{
+                            deps: "isStudent",
                             required: "必須",
                             validate: vFormFieldValidator(
                                 CurrentFormDataSchema.entries.profile.entries.class,
@@ -170,6 +160,7 @@ export const Core = () => {
                         required
                         control={control}
                         rules={{
+                            deps: "isStudent",
                             required: "必須",
                             validate: vFormFieldValidator(
                                 CurrentFormDataSchema.entries.profile.entries.number,
