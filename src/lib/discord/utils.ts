@@ -93,6 +93,8 @@ export class Logger {
 
     private logStack: APIEmbed[]
 
+    private context: Context<Env>
+
     constructor({
         context,
         webhook,
@@ -106,6 +108,7 @@ export class Logger {
     }) {
         this.webhook = webhook
         this.author = author
+        this.context = context
         this.timestamp = new Date(timestampInSeconds * 1000)
         this.discord = new API(new REST({ version: "10" }).setToken(context.env.DISCORD_TOKEN))
         this.avatarUrl = new URL(loggingWebhookAvatarPath, context.env.ORIGIN)
@@ -147,23 +150,25 @@ export class Logger {
         this.log(LogLevel.info, embed)
     }
 
-    async [Symbol.asyncDispose]() {
+    [Symbol.dispose]() {
         if (!this.webhook?.token) return
         while (this.logStack.length) {
             const chunk = this.logStack.splice(0, DISCORD_EMBEDS_MAX_COUNT)
-            await this.discord.webhooks
-                .execute(this.webhook.id, this.webhook.token, {
-                    avatar_url: this.avatarUrl.href,
-                    embeds: chunk,
-                })
-                .catch((error: unknown) => {
-                    if (error instanceof Error) {
-                        console.error({
-                            at: "Logger",
-                            error,
-                        })
-                    }
-                })
+            this.context.executionCtx.waitUntil(
+                this.discord.webhooks
+                    .execute(this.webhook.id, this.webhook.token, {
+                        avatar_url: this.avatarUrl.href,
+                        embeds: chunk,
+                    })
+                    .catch((error: unknown) => {
+                        if (error instanceof Error) {
+                            console.error({
+                                at: "Logger",
+                                error,
+                            })
+                        }
+                    }),
+            )
         }
     }
 }

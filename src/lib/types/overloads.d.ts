@@ -39,7 +39,7 @@ declare global {
             this: T,
             callbackfn: (value: ArrayValues<T>, index: number, array: T) => U,
             thisArg?: any,
-        ): ArrayMap<T, U>
+        ): ArrayMap<[...T], U>
         /* eslint-enable @typescript-eslint/no-explicit-any */
     }
 
@@ -60,13 +60,13 @@ declare global {
             this: T,
             callbackfn: (value: ArrayValues<T>, index: number, array: T) => U,
             thisArg?: any,
-        ): ArrayMap<[...T], U>
+        ): ArrayMap<readonly [...T], U>
         /* eslint-enable @typescript-eslint/no-explicit-any */
     }
 
     interface ObjectConstructor {
         entries<const T extends Record<PropertyKey, unknown>>(o: T): Entries<T>
-        fromEntries<const T extends Array<[PropertyKey, unknown]>>(entries: T): FromEntries<T>
+        fromEntries<const T extends readonly [PropertyKey, unknown][]>(entries: T): FromEntries<T>
         keys<const T>(o: T): `${Exclude<keyof T, symbol>}`[]
     }
 

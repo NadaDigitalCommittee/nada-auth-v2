@@ -6,17 +6,17 @@ import { drive_v3 } from "googleapis/build/src/apis/drive/v3"
 import { sheets_v4 } from "googleapis/build/src/apis/sheets/v4"
 import { Hono } from "hono"
 import { deleteCookie } from "hono/cookie"
+import { HTTPException } from "hono/http-exception"
 import * as v from "valibot"
 
 import { appSteps } from "../steps"
 
 import { App } from "@/components/App"
-import { ErrorAlert } from "@/components/ErrorAlert"
 import { NotchedOutline } from "@/components/NotchedOutline"
 import { SuccessAlert } from "@/components/SuccessAlert"
 import { createLayout } from "@/components/layout"
 import { guildConfigInit } from "@/lib/discord/constants"
-import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
+import { getDiscordAPIErrorMessage } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, $SessionId, $SheetsOAuthSession } from "@/lib/schema/kvNamespaces"
 import type { AppPropertiesV1 } from "@/lib/schema/spreadsheet"
@@ -42,9 +42,11 @@ const app = new Hono<Env>().post(
         v.object({
             folderId: v.string(),
         }),
-        (result, c) => {
+        (result) => {
             if (!result.success) {
-                return c.render(<ErrorAlert>フォームの入力内容が正しくありません。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "フォームの入力内容が正しくありません。",
+                })
             }
         },
     ),
@@ -53,10 +55,9 @@ const app = new Hono<Env>().post(
         v.object({
             sid: $SessionId,
         }),
-        (result, c) => {
+        (result) => {
             if (!result.success) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+                throw new HTTPException(400, { message: "セッションが無効です。" })
             }
         },
     ),
@@ -67,49 +68,31 @@ const app = new Hono<Env>().post(
         const { folderId } = c.req.valid("form")
         const sessionId = c.req.valid("cookie").sid
         const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
-        await sessionRecord.delete(sessionId)
+        c.executionCtx.waitUntil(sessionRecord.delete(sessionId))
         const sessionParseResult = v.safeParse($SheetsOAuthSession, rawSession)
         if (!sessionParseResult.success) {
-            c.status(400)
             deleteCookie(c, "sid")
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            throw new HTTPException(400, { message: "セッションが無効です。" })
         }
         const session = sessionParseResult.output
         const rawGuildConfig = await guildConfigRecord.get(session.guildId, "json").catch(id)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
-            c.status(500)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    サーバーの設定データが破損しています。
-                </ErrorAlert>,
-            )
+            throw new HTTPException(500, { message: "サーバーの設定データが破損しています。" })
         }
         const guildConfig = guildConfigParseResult.output
         if (!guildConfig._sheet) {
-            c.status(400)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">セッションが不正です。</ErrorAlert>,
-            )
+            throw new HTTPException(400, { message: "セッションが不正です。" })
         }
-        const errorContext = {
-            guildId: session.guildId,
-        } as const satisfies ErrorContext
-
         const guildPreview = await c.var.discord.guilds
             .getPreview(session.guildId)
-            .catch(id<unknown, Error>)
+            .catch((e: unknown) => {
+                throw new HTTPException(500, {
+                    message: `スプレッドシートを指定されたフォルダに作成することができませんでした。\n${getDiscordAPIErrorMessage(e)}`,
+                    cause: e,
+                })
+            })
 
-        if (guildPreview instanceof Error) {
-            c.status(500)
-            await reportErrorWithContext(guildPreview, errorContext, c.env)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    スプレッドシートを指定されたフォルダに作成することができませんでした。
-                    {guildPreview.message}
-                </ErrorAlert>,
-            )
-        }
         const oAuth2Client = new OAuth2Client({
             credentials: {
                 access_token: session.accessToken,
@@ -132,52 +115,39 @@ const app = new Hono<Env>().post(
                 fields: "id",
                 supportsAllDrives: true,
             })
-            .catch(id<unknown, Error>)
-
-        if (spreadsheetCreateResponse instanceof Error) {
-            c.status(500)
-            await reportErrorWithContext(spreadsheetCreateResponse, errorContext, c.env)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    スプレッドシートを指定されたフォルダに作成することができませんでした。
-                    {spreadsheetCreateResponse.message}
-                </ErrorAlert>,
-            )
-        }
+            .catch((e: unknown) => {
+                throw new HTTPException(500, {
+                    message:
+                        "スプレッドシートを指定されたフォルダに作成することができませんでした。",
+                    cause: e,
+                })
+            })
         const spreadsheetId = spreadsheetCreateResponse.data.id
         if (!spreadsheetId) {
-            c.status(500)
-            await reportErrorWithContext(
-                new Error("Could not get the ID of the created file."),
-                errorContext,
-                c.env,
-            )
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    作成したスプレッドシートの情報を取得することができませんでした。
-                </ErrorAlert>,
-            )
+            throw new HTTPException(500, {
+                message: "作成したスプレッドシートの情報を取得することができませんでした。",
+            })
         }
 
-        const sheetUpdateResponse = await sheets.spreadsheets
-            .batchUpdate({
-                spreadsheetId,
-                requestBody: {
-                    requests: spreadsheetInit,
-                },
-            })
-            .catch(id<unknown, Error>)
-        if (sheetUpdateResponse instanceof Error) {
-            c.status(500)
-            await reportErrorWithContext(sheetUpdateResponse, errorContext, c.env)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    作成したスプレッドシートに書き込むことができませんでした。
-                </ErrorAlert>,
-            )
-        }
+        c.executionCtx.waitUntil(
+            sheets.spreadsheets
+                .batchUpdate({
+                    spreadsheetId,
+                    requestBody: {
+                        requests: spreadsheetInit,
+                    },
+                })
+                .catch((e: unknown) => {
+                    throw new HTTPException(500, {
+                        message: "作成したスプレッドシートに書き込むことができませんでした。",
+                        cause: e,
+                    })
+                }),
+        )
         guildConfig._sheet.spreadsheetId = spreadsheetId
-        await guildConfigRecord.put(session.guildId, JSON.stringify(guildConfig))
+        c.executionCtx.waitUntil(
+            guildConfigRecord.put(session.guildId, JSON.stringify(guildConfig)),
+        )
         return c.render(
             <>
                 <SuccessAlert>スプレッドシートが作成され、初期化されました。</SuccessAlert>

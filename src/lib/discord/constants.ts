@@ -27,7 +27,7 @@ const guildConfigOptionMapBase = [
 ] as const satisfies [string, keyof GuildConfig][]
 export const guildConfigOptionNameToKvKeyMap = new ReadonlyMap(guildConfigOptionMapBase)
 export const guildConfigKvKeyToOptionNameMap = new ReadonlyMap(
-    guildConfigOptionMapBase.map(([p0, p1]) => [p1, p0]),
+    guildConfigOptionMapBase.map(([p0, p1]) => [p1, p0] as const),
 )
 
 export const guildConfigInit = {
