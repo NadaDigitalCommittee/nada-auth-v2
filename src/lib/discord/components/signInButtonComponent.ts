@@ -48,15 +48,19 @@ export const handler: ComponentHandler<Env, Button> = async (c) => {
     const authNRequestToken = generateSecret(64)
     const sessionId = generateSecret(64)
     const session: Session = { guildId, user, roles, interactionToken }
-    await authNRequestRecord.put(`userId:${user.id}`, sessionId, {
-        expirationTtl: sessionExpirationTtl,
-    })
-    await authNRequestRecord.put(`requestToken:${authNRequestToken}`, sessionId, {
-        expirationTtl: requestTokenExpirationTtl,
-    })
-    await sessionRecord.put(sessionId, JSON.stringify(session), {
-        expirationTtl: import.meta.env.DEV ? sessionExpirationTtlDev : sessionExpirationTtl,
-    })
+    c.executionCtx.waitUntil(
+        Promise.all([
+            authNRequestRecord.put(`userId:${user.id}`, sessionId, {
+                expirationTtl: sessionExpirationTtl,
+            }),
+            authNRequestRecord.put(`requestToken:${authNRequestToken}`, sessionId, {
+                expirationTtl: requestTokenExpirationTtl,
+            }),
+            sessionRecord.put(sessionId, JSON.stringify(session), {
+                expirationTtl: import.meta.env.DEV ? sessionExpirationTtlDev : sessionExpirationTtl,
+            }),
+        ]),
+    )
     const honoClient = hc<AppType>(c.env.ORIGIN)
     const oAuthUrl = honoClient.oauth.signin.$url({ query: { token: authNRequestToken } })
     const signInButtonLink = {

@@ -1,4 +1,3 @@
-import type { WebhooksAPI } from "@discordjs/core/http-only"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import { decode } from "decode-formdata"
@@ -6,6 +5,7 @@ import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { getCookie, setCookie } from "hono/cookie"
+import { HTTPException } from "hono/http-exception"
 import * as v from "valibot"
 
 import { callback } from "./callback"
@@ -45,14 +45,11 @@ const app = new Hono<Env>()
             v.object({
                 token: $RequestToken,
             }),
-            (result, c) => {
+            (result) => {
                 if (!result.success) {
-                    c.status(400)
-                    return c.render(
-                        <ErrorAlert title="Bad Request">
-                            トークンが指定されませんでした。
-                        </ErrorAlert>,
-                    )
+                    throw new HTTPException(400, {
+                        message: "トークンが指定されませんでした。",
+                    })
                 }
             },
         ),
@@ -64,7 +61,7 @@ const app = new Hono<Env>()
                     `requestToken:${requestToken}` satisfies keyof AuthNRequestRecord
                 const kvSessionId = await authNRequestRecord.get(kvSessionIdKey)
                 if (kvSessionId) {
-                    await authNRequestRecord.delete(kvSessionIdKey)
+                    c.executionCtx.waitUntil(authNRequestRecord.delete(kvSessionIdKey))
                     setCookie(c, "sid", kvSessionId, {
                         ...sharedCookieOption,
                         sameSite: "Lax",
@@ -73,8 +70,9 @@ const app = new Hono<Env>()
                 } else return getCookie(c, "sid")
             })()
             if (!sessionId) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">トークンが無効です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "トークンが無効です。",
+                })
             }
             return c.render(<ProfileForm />)
         },
@@ -86,11 +84,11 @@ const app = new Hono<Env>()
             v.object({
                 sid: v.string(),
             }),
-            (result, c) => {
+            (result) => {
                 if (!result.success) {
-                    return c.render(
-                        <ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>,
-                    )
+                    throw new HTTPException(400, {
+                        message: "セッションが無効です。",
+                    })
                 }
             },
         ),
@@ -105,9 +103,7 @@ const app = new Hono<Env>()
                 c.status(400)
                 return c.render(
                     <>
-                        <ErrorAlert title="Bad Request">
-                            フォームの入力内容が正しくありません。
-                        </ErrorAlert>
+                        <ErrorAlert>フォームの入力内容が正しくありません。</ErrorAlert>
                         <ProfileForm />
                     </>,
                 )
@@ -118,13 +114,15 @@ const app = new Hono<Env>()
             const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
             const sessionParseResult = v.safeParse($Session, rawSession)
             if (!sessionParseResult.success) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "セッションが無効です。",
+                })
             }
             const session = sessionParseResult.output
             if (session.state || session.nonce) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">セッションが不正です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "セッションが不正です。",
+                })
             }
             const honoClient = hc<AppType>(c.env.ORIGIN)
             const redirectUri = honoClient.oauth.signin.callback.$url()
@@ -140,32 +138,26 @@ const app = new Hono<Env>()
                 nonce,
             })
             Object.assign(session, { state, nonce, userProfile })
-            await sessionRecord.put(sessionId, JSON.stringify(session))
+            c.executionCtx.waitUntil(sessionRecord.put(sessionId, JSON.stringify(session)))
             const errorContext = {
                 guildId: session.guildId,
                 user: session.user,
             } as const satisfies ErrorContext
-            const originalInteractions = [
-                c.env.DISCORD_APPLICATION_ID,
-                session.interactionToken,
-                "@original",
-            ] satisfies Parameters<WebhooksAPI["getMessage"]>
-            const originalResponse = await c.var.discord.webhooks
-                .getMessage(...originalInteractions)
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    return null
-                })
-            if (originalResponse?.components?.length) {
-                await c.var.discord.webhooks
-                    .editMessage(...originalInteractions, {
-                        content: ":tickets: リンクが使用されました。",
-                        components: [],
-                    })
+            c.executionCtx.waitUntil(
+                c.var.discord.webhooks
+                    .editMessage(
+                        c.env.DISCORD_APPLICATION_ID,
+                        session.interactionToken,
+                        "@original",
+                        {
+                            content: ":tickets: リンクが使用されました。",
+                            components: [],
+                        },
+                    )
                     .catch(async (e: unknown) => {
                         if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                    })
-            }
+                    }),
+            )
             return c.redirect(authUrl)
         },
     )

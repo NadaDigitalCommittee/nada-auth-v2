@@ -1,4 +1,3 @@
-import type { WebhooksAPI } from "@discordjs/core/http-only"
 import { reactRenderer } from "@hono/react-renderer"
 import { vValidator } from "@hono/valibot-validator"
 import type { RESTPatchAPIWebhookWithTokenMessageJSONBody } from "discord-api-types/v10"
@@ -6,17 +5,16 @@ import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { deleteCookie } from "hono/cookie"
+import { HTTPException } from "hono/http-exception"
 import * as v from "valibot"
 
 import { appSteps } from "../steps"
 
 import type { AppType } from "@/app"
 import { App } from "@/components/App"
-import { ErrorAlert } from "@/components/ErrorAlert"
 import { DrivePicker } from "@/components/islands/drive-picker/server"
 import { createLayout } from "@/components/layout"
 import { guildConfigInit } from "@/lib/discord/constants"
-import { type ErrorContext, reportErrorWithContext } from "@/lib/discord/utils"
 import type { Env } from "@/lib/schema/env"
 import { $GuildConfig, $SessionId, $SheetsOAuthSession } from "@/lib/schema/kvNamespaces"
 import { oAuthCallbackQueryParams } from "@/lib/schema/oauth"
@@ -36,10 +34,11 @@ const app = new Hono<Env>().get(
             ),
         }),
     ),
-    vValidator("query", oAuthCallbackQueryParams, (result, c) => {
+    vValidator("query", oAuthCallbackQueryParams, (result) => {
         if (!result.success) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: "無効なリクエストです。",
+            })
         }
     }),
     vValidator(
@@ -47,10 +46,11 @@ const app = new Hono<Env>().get(
         v.object({
             sid: $SessionId,
         }),
-        (result, c) => {
+        (result) => {
             if (!result.success) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "セッションが無効です。",
+                })
             }
         },
     ),
@@ -64,55 +64,48 @@ const app = new Hono<Env>().get(
         const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
         const sessionParseResult = v.safeParse($SheetsOAuthSession, rawSession)
         if (!sessionParseResult.success) {
-            c.status(400)
             deleteCookie(c, "sid")
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: "セッションが無効です。",
+            })
         }
         const session = sessionParseResult.output
         if (state !== session.state) {
-            c.status(401)
-            return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
+            throw new HTTPException(401, {
+                message: "無効なリクエストです。",
+            })
         }
 
-        const errorContext = {
-            guildId: session.guildId,
-        } as const satisfies ErrorContext
-        const originalInteractions = [
-            c.env.DISCORD_APPLICATION_ID,
-            session.interactionToken,
-            "@original",
-        ] satisfies Parameters<WebhooksAPI["getMessage"]>
-        const editOriginal = async (
-            body: RESTPatchAPIWebhookWithTokenMessageJSONBody,
-        ): Promise<void> => {
-            await c.var.discord.webhooks
-                .editMessage(...originalInteractions, body)
-                .catch(async (e: unknown) => {
-                    if (e instanceof Error) await reportErrorWithContext(e, errorContext, c.env)
-                })
+        const editOriginal = (body: RESTPatchAPIWebhookWithTokenMessageJSONBody) => {
+            c.executionCtx.waitUntil(
+                c.var.discord.webhooks.editMessage(
+                    c.env.DISCORD_APPLICATION_ID,
+                    session.interactionToken,
+                    "@original",
+                    body,
+                ),
+            )
         }
         const rawGuildConfig = await guildConfigRecord.get(session.guildId, "json").catch(id)
         const guildConfigParseResult = v.safeParse($GuildConfig, rawGuildConfig ?? guildConfigInit)
         if (!guildConfigParseResult.success) {
-            await editOriginal({
+            editOriginal({
                 content: ":x: サーバーの設定データが破損しています。",
                 components: [],
             })
-            c.status(500)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    サーバーの設定データが破損しています。
-                </ErrorAlert>,
-            )
+            throw new HTTPException(500, {
+                message: "サーバーの設定データが破損しています。",
+            })
         }
         const guildConfig = guildConfigParseResult.output
         if (query.error !== undefined) {
-            await editOriginal({
+            editOriginal({
                 content: OAUTH_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">{query.error}</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: query.error,
+            })
         }
         const honoClient = hc<AppType>(c.env.ORIGIN)
         const redirectUri = honoClient.oauth.sheets.callback.$url()
@@ -121,30 +114,33 @@ const app = new Hono<Env>().get(
             clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
             redirectUri: redirectUri.href,
         })
-        const getTokenResponse = await oAuth2Client.getToken(query.code).catch(orNull)
-        if (!getTokenResponse) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
-        }
+        const getTokenResponse = await oAuth2Client.getToken(query.code).catch(() => {
+            throw new HTTPException(400, {
+                message: "無効なリクエストです。",
+            })
+        })
         const { tokens } = getTokenResponse
         if (!(tokens.access_token && tokens.expiry_date && tokens.refresh_token)) {
-            await editOriginal({
+            editOriginal({
                 content: OAUTH_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(401)
-            return c.render(
-                <ErrorAlert title="Unauthorized">資格情報が不足しています。</ErrorAlert>,
-            )
+            throw new HTTPException(401, {
+                message: "資格情報が不足しています。",
+            })
         }
         guildConfig._sheet = Object.assign(guildConfig._sheet ?? {}, {
             refreshToken: tokens.refresh_token,
             accessToken: tokens.access_token,
             accessTokenExpiry: tokens.expiry_date,
         })
-        await guildConfigRecord.put(session.guildId, JSON.stringify(guildConfig))
         session.accessToken = tokens.access_token
-        await sessionRecord.put(sessionId, JSON.stringify(session))
+        c.executionCtx.waitUntil(
+            Promise.all([
+                guildConfigRecord.put(session.guildId, JSON.stringify(guildConfig)),
+                sessionRecord.put(sessionId, JSON.stringify(session)),
+            ]),
+        )
         return c.render(
             <DrivePicker
                 formAction="./complete"

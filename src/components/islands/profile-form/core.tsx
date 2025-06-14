@@ -82,13 +82,11 @@ export const Core = () => {
 
     // CheckboxElementのonChangeでトリガーするとRHFとReactが競合して4, 5回再レンダリングされてしまう上に、古いデータを参照することがある
     useEffect(() => {
-        void (async () => {
-            await trigger(
-                objectPaths(dirtyFields, {
-                    fullPathOnly: true,
-                }),
-            )
-        })()
+        void trigger(
+            objectPaths(dirtyFields, {
+                fullPathOnly: true,
+            }),
+        )
         // eslint-disable-next-line react-hooks/exhaustive-deps -- dirtyFieldsは更新されると自動で再トリガーされる / triggerは更新を監視する対象ではない
     }, [isStudent])
 
