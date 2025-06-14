@@ -4,6 +4,7 @@ import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { deleteCookie, getCookie, setCookie } from "hono/cookie"
+import { HTTPException } from "hono/http-exception"
 import * as v from "valibot"
 
 import { callback } from "./callback"
@@ -41,14 +42,11 @@ const app = new Hono<Env>()
             v.object({
                 token: $RequestToken,
             }),
-            (result, c) => {
+            (result) => {
                 if (!result.success) {
-                    c.status(400)
-                    return c.render(
-                        <ErrorAlert title="Bad Request">
-                            トークンが指定されませんでした。
-                        </ErrorAlert>,
-                    )
+                    throw new HTTPException(400, {
+                        message: "トークンが指定されませんでした。",
+                    })
                 }
             },
         ),
@@ -69,20 +67,23 @@ const app = new Hono<Env>()
                 } else return getCookie(c, "sid")
             })()
             if (!sessionId) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">トークンが無効です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "トークンが無効です。",
+                })
             }
             const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
             const sessionParseResult = v.safeParse($SheetsOAuthSession, rawSession)
             if (!sessionParseResult.success) {
-                c.status(400)
                 deleteCookie(c, "sid")
-                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "セッションが無効です。",
+                })
             }
             const session = sessionParseResult.output
             if (session.state) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">セッションが不正です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "セッションが不正です。",
+                })
             }
             const honoClient = hc<AppType>(c.env.ORIGIN)
             const redirectUri = honoClient.oauth.sheets.callback.$url()

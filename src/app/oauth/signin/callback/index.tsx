@@ -7,6 +7,7 @@ import { sheets_v4 } from "googleapis/build/src/apis/sheets/v4"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { deleteCookie } from "hono/cookie"
+import { HTTPException } from "hono/http-exception"
 import * as v from "valibot"
 
 import { appSteps } from "../steps"
@@ -53,10 +54,11 @@ const app = new Hono<Env>().get(
             ),
         }),
     ),
-    vValidator("query", oAuthCallbackQueryParams, (result, c) => {
+    vValidator("query", oAuthCallbackQueryParams, (result) => {
         if (!result.success) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: "無効なリクエストです。",
+            })
         }
     }),
     vValidator(
@@ -64,10 +66,11 @@ const app = new Hono<Env>().get(
         v.object({
             sid: $SessionId,
         }),
-        (result, c) => {
+        (result) => {
             if (!result.success) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "セッションが無効です。",
+                })
             }
         },
     ),
@@ -86,18 +89,21 @@ const app = new Hono<Env>().get(
         c.executionCtx.waitUntil(sessionRecord.delete(sessionId))
         const sessionParseResult = v.safeParse($Session, rawSession)
         if (!sessionParseResult.success) {
-            c.status(400)
             deleteCookie(c, "sid")
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: "セッションが無効です。",
+            })
         }
         const session = sessionParseResult.output
         if (!(session.state && session.nonce)) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: "セッションが無効です。",
+            })
         }
         if (state !== session.state) {
-            c.status(401)
-            return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
+            throw new HTTPException(401, {
+                message: "無効なリクエストです。",
+            })
         }
 
         const errorContext = {
@@ -125,12 +131,9 @@ const app = new Hono<Env>().get(
                 content: ":x: Discordサーバー側の問題により認証に失敗しました。",
                 components: [],
             })
-            c.status(500)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    Discordサーバー側の問題により認証に失敗しました。
-                </ErrorAlert>,
-            )
+            throw new HTTPException(500, {
+                message: "Discordサーバー側の問題により認証に失敗しました。",
+            })
         }
         const guildConfig = guildConfigParseResult.output
         if (query.error !== undefined) {
@@ -138,8 +141,9 @@ const app = new Hono<Env>().get(
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">{query.error}</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: query.error,
+            })
         }
         const honoClient = hc<AppType>(c.env.ORIGIN)
         const redirectUri = honoClient.oauth.signin.callback.$url()
@@ -148,21 +152,20 @@ const app = new Hono<Env>().get(
             clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
             redirectUri: redirectUri.href,
         })
-        const getTokenResponse = await oAuth2Client.getToken(query.code).catch(orNull)
-        if (!getTokenResponse) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
-        }
+        const getTokenResponse = await oAuth2Client.getToken(query.code).catch(() => {
+            throw new HTTPException(400, {
+                message: "無効なリクエストです。",
+            })
+        })
         const { tokens } = getTokenResponse
         if (!(tokens.id_token && tokens.access_token)) {
             editOriginal({
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(401)
-            return c.render(
-                <ErrorAlert title="Unauthorized">資格情報が不足しています。</ErrorAlert>,
-            )
+            throw new HTTPException(401, {
+                message: "資格情報が不足しています。",
+            })
         }
         const loginTicket = await oAuth2Client.verifyIdToken({
             idToken: tokens.id_token,
@@ -178,12 +181,9 @@ const app = new Hono<Env>().get(
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(401)
-            return c.render(
-                <ErrorAlert title="Unauthorized">
-                    学内のユーザーであることを確認できませんでした。
-                </ErrorAlert>,
-            )
+            throw new HTTPException(401, {
+                message: "学内のユーザーであることを確認できませんでした。",
+            })
         }
         const tokenPayload = tokenPayloadParseResult.output
         if (tokenPayload.nonce !== session.nonce) {
@@ -191,8 +191,9 @@ const app = new Hono<Env>().get(
                 content: AUTHN_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(401)
-            return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
+            throw new HTTPException(401, {
+                message: "無効なリクエストです。",
+            })
         }
         using logger = new Logger({
             context: c,
@@ -214,12 +215,9 @@ const app = new Hono<Env>().get(
                     },
                 ],
             })
-            c.status(401)
-            return await c.render(
-                <ErrorAlert title="Unauthorized">
-                    学内のユーザーであることを確認できませんでした。
-                </ErrorAlert>,
-            )
+            throw new HTTPException(401, {
+                message: "学内のユーザーであることを確認できませんでした。",
+            })
         }
         const nadaACWorkSpaceUser = extractNadaACWorkSpaceUserFromTokenPayload(tokenPayload)
         const userProfileValidationResult =
@@ -249,12 +247,9 @@ const app = new Hono<Env>().get(
                         },
                     ],
                 })
-                c.status(401)
-                return await c.render(
-                    <ErrorAlert title="Unauthorized">
-                        入力されたプロフィール情報とアカウント情報が一致しません。
-                    </ErrorAlert>,
-                )
+                throw new HTTPException(401, {
+                    message: "入力されたプロフィール情報とアカウント情報が一致しません。",
+                })
             } else {
                 logger.warn({
                     title: "Warnings while authentication",

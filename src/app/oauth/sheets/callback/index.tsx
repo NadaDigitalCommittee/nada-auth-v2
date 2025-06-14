@@ -5,6 +5,7 @@ import { OAuth2Client } from "google-auth-library"
 import { Hono } from "hono"
 import { hc } from "hono/client"
 import { deleteCookie } from "hono/cookie"
+import { HTTPException } from "hono/http-exception"
 import * as v from "valibot"
 
 import { appSteps } from "../steps"
@@ -34,10 +35,11 @@ const app = new Hono<Env>().get(
             ),
         }),
     ),
-    vValidator("query", oAuthCallbackQueryParams, (result, c) => {
+    vValidator("query", oAuthCallbackQueryParams, (result) => {
         if (!result.success) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: "無効なリクエストです。",
+            })
         }
     }),
     vValidator(
@@ -45,10 +47,11 @@ const app = new Hono<Env>().get(
         v.object({
             sid: $SessionId,
         }),
-        (result, c) => {
+        (result) => {
             if (!result.success) {
-                c.status(400)
-                return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+                throw new HTTPException(400, {
+                    message: "セッションが無効です。",
+                })
             }
         },
     ),
@@ -62,14 +65,16 @@ const app = new Hono<Env>().get(
         const rawSession = await sessionRecord.get(sessionId, "json").catch(orNull)
         const sessionParseResult = v.safeParse($SheetsOAuthSession, rawSession)
         if (!sessionParseResult.success) {
-            c.status(400)
             deleteCookie(c, "sid")
-            return c.render(<ErrorAlert title="Bad Request">セッションが無効です。</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: "セッションが無効です。",
+            })
         }
         const session = sessionParseResult.output
         if (state !== session.state) {
-            c.status(401)
-            return c.render(<ErrorAlert title="Unauthorized">無効なリクエストです。</ErrorAlert>)
+            throw new HTTPException(401, {
+                message: "無効なリクエストです。",
+            })
         }
 
         const editOriginal = (body: RESTPatchAPIWebhookWithTokenMessageJSONBody) => {
@@ -89,12 +94,9 @@ const app = new Hono<Env>().get(
                 content: ":x: サーバーの設定データが破損しています。",
                 components: [],
             })
-            c.status(500)
-            return c.render(
-                <ErrorAlert title="Internal Server Error">
-                    サーバーの設定データが破損しています。
-                </ErrorAlert>,
-            )
+            throw new HTTPException(500, {
+                message: "サーバーの設定データが破損しています。",
+            })
         }
         const guildConfig = guildConfigParseResult.output
         if (query.error !== undefined) {
@@ -102,8 +104,9 @@ const app = new Hono<Env>().get(
                 content: OAUTH_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">{query.error}</ErrorAlert>)
+            throw new HTTPException(400, {
+                message: query.error,
+            })
         }
         const honoClient = hc<AppType>(c.env.ORIGIN)
         const redirectUri = honoClient.oauth.sheets.callback.$url()
@@ -112,21 +115,20 @@ const app = new Hono<Env>().get(
             clientSecret: c.env.GOOGLE_OAUTH_CLIENT_SECRET,
             redirectUri: redirectUri.href,
         })
-        const getTokenResponse = await oAuth2Client.getToken(query.code).catch(orNull)
-        if (!getTokenResponse) {
-            c.status(400)
-            return c.render(<ErrorAlert title="Bad Request">無効なリクエストです。</ErrorAlert>)
-        }
+        const getTokenResponse = await oAuth2Client.getToken(query.code).catch(() => {
+            throw new HTTPException(400, {
+                message: "無効なリクエストです。",
+            })
+        })
         const { tokens } = getTokenResponse
         if (!(tokens.access_token && tokens.expiry_date && tokens.refresh_token)) {
             editOriginal({
                 content: OAUTH_FAILED_MESSAGE,
                 components: [],
             })
-            c.status(401)
-            return c.render(
-                <ErrorAlert title="Unauthorized">資格情報が不足しています。</ErrorAlert>,
-            )
+            throw new HTTPException(401, {
+                message: "資格情報が不足しています。",
+            })
         }
         guildConfig._sheet = Object.assign(guildConfig._sheet ?? {}, {
             refreshToken: tokens.refresh_token,
