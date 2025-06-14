@@ -52,7 +52,7 @@ export const spreadsheetInit: sheets_v4.Schema$Request[] = [
             range: headerRange,
             rows: [
                 {
-                    values: header.map(([stringValue, note]) => ({
+                    values: [...header].map(([stringValue, note]) => ({
                         userEnteredValue: { stringValue },
                         note,
                     })),
