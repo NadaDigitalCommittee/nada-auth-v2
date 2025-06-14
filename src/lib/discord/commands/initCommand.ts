@@ -98,7 +98,7 @@ export const handler: CommandHandler<Env> = async (c) => {
         if (commandOptionDef?.type === commandOptionData?.type) return commandOptionData?.value
     }
     const { channel, avatar, username } = Object.fromEntries(
-        command.options.map((o) => [o.name, getOptionValue(o.name)]),
+        command.options.map((o) => [o.name, getOptionValue(o.name)] as const),
     )
     if (!channel)
         return c.res(":x: 必須オプション `channel` の形式が不正であるか、与えられませんでした。")

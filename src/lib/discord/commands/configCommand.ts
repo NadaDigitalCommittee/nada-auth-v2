@@ -201,7 +201,7 @@ const generateConfigTableEmbed = (
     ],
 ) =>
     new Embed().fields(
-        ...Object.entries({ ...guildConfigInit, ...config }).reduce((acc, cur) => {
+        ...Object.entries({ ...guildConfigInit, ...config }).reduce<APIEmbedField[]>((acc, cur) => {
             const isInternalConfigEntry = (
                 entry: [string, unknown],
             ): entry is [`_${string}`, unknown] => entry[0].startsWith("_")
@@ -219,8 +219,7 @@ const generateConfigTableEmbed = (
                 } satisfies APIEmbedField)
             }
             return acc
-            // eslint-disable-next-line @typescript-eslint/prefer-reduce-type-parameter
-        }, [] as APIEmbedField[]),
+        }, []),
     )
 
 /**
