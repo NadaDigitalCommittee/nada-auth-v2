@@ -33,7 +33,7 @@
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
         "@types/bun": "^1.2.18",
         "@types/gapi": "^0.0.47",
-        "@types/google.picker": "^0.0.50",
+        "@types/google.picker": "^0.0.51",
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
         "concurrently": "^9.1.2",
@@ -60,7 +60,6 @@
   "patchedDependencies": {
     "discord-api-types@0.37.120": "patches/discord-api-types@0.37.120.patch",
     "google-auth-library@10.1.0": "patches/google-auth-library@10.1.0.patch",
-    "@types/google.picker@0.0.50": "patches/@types%2Fgoogle.picker@0.0.50.patch",
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.26.2", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.25.9", "js-tokens": "^4.0.0", "picocolors": "^1.0.0" } }, "sha512-RJlIHRueQgwWitWgF8OdFYGZX328Ax5BCemNGlqHfplnRT9ESi8JkFlvaVYbS+UubVY6dpv87Fs2u5M29iNFVQ=="],
@@ -315,7 +314,7 @@
 
     "@types/gapi": ["@types/gapi@0.0.47", "", {}, "sha512-/ZsLuq6BffMgbKMtZyDZ8vwQvTyKhKQ1G2K6VyWCgtHHhfSSXbk4+4JwImZiTjWNXfI2q1ZStAwFFHSkNoTkHA=="],
 
-    "@types/google.picker": ["@types/google.picker@0.0.50", "", {}, "sha512-0gY/HaMFjzmX5yYm+wZLEIZIn6x6hrn9Cn2ERp4E6T7v5X4s5nqcjfr62KRILEy+YEaj5isxSbfTYcEe1fX5hQ=="],
+    "@types/google.picker": ["@types/google.picker@0.0.51", "", {}, "sha512-z6o2J4PQTcXvlW1rtgQx65d5uEF+rMI1hzrnazKQxBONdEuYAr4AeOSH2KZy12WHPmqMX+aWYyfcZ0uktBBhhA=="],
 
     "@types/json-schema": ["@types/json-schema@7.0.15", "", {}, "sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA=="],
 
