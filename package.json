@@ -35,8 +35,8 @@
         "decode-formdata": "^0.9.0",
         "discord-api-types": "^0.37.120",
         "discord-hono": "^0.16.4",
-        "google-auth-library": "^9.15.1",
-        "googleapis": "^148.0.0",
+        "google-auth-library": "^10.1.0",
+        "googleapis": "^154.0.0",
         "hono": "^4.7.11",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
@@ -75,7 +75,7 @@
     },
     "patchedDependencies": {
         "discord-api-types@0.37.120": "patches/discord-api-types@0.37.120.patch",
-        "google-auth-library@9.15.1": "patches/google-auth-library@9.15.1.patch",
-        "@types/google.picker@0.0.50": "patches/@types%2Fgoogle.picker@0.0.50.patch"
+        "@types/google.picker@0.0.50": "patches/@types%2Fgoogle.picker@0.0.50.patch",
+        "google-auth-library@10.1.0": "patches/google-auth-library@10.1.0.patch"
     }
 }
