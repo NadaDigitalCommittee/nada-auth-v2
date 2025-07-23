@@ -1,5 +1,5 @@
 diff --git a/build/src/crypto/node/crypto.js b/build/src/crypto/node/crypto.js
-index 26ede463f7d7abc55676ea17fe94cc7d6ce17577..16af82d082ae0bdfcc8e1c408e3829b6b8a17616 100644
+index 38e36331a765e3fa9c6cd144e01644b3710e9367..7b9fdf3e5a9647f87f7133153a215dc3529ca944 100644
 --- a/build/src/crypto/node/crypto.js
 +++ b/build/src/crypto/node/crypto.js
 @@ -14,7 +14,7 @@
@@ -12,13 +12,13 @@ index 26ede463f7d7abc55676ea17fe94cc7d6ce17577..16af82d082ae0bdfcc8e1c408e3829b6
      async sha256DigestBase64(str) {
          return crypto.createHash('sha256').update(str).digest('base64');
 diff --git a/package.json b/package.json
-index a7e3231ed6a91a4c897abdc77805f9c6eb5acbfb..3174a58795ffd910baec71910e7664e95bb96608 100644
+index 39bc323480871b38fb0e155e6c7cd05fb52f2ced..6552c2226778bcc213ed6b85276946a15eb98148 100644
 --- a/package.json
 +++ b/package.json
-@@ -22,7 +22,8 @@
-     "gaxios": "^6.1.1",
-     "gcp-metadata": "^6.1.0",
-     "gtoken": "^7.0.0",
+@@ -23,7 +23,8 @@
+     "gcp-metadata": "^7.0.0",
+     "google-logging-utils": "^1.0.0",
+     "gtoken": "^8.0.0",
 -    "jws": "^4.0.0"
 +    "jws": "^4.0.0",
 +    "crypto-browserify": "^3.12.1"
