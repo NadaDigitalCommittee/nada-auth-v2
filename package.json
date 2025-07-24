@@ -28,7 +28,7 @@
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
         "@hono/react-renderer": "^1.0.1",
-        "@hono/valibot-validator": "^0.5.2",
+        "@hono/valibot-validator": "^0.5.3",
         "@mui/icons-material": "^6.4.12",
         "@mui/material": "^6.4.12",
         "crypto-browserify": "^3.12.1",
