@@ -51,7 +51,7 @@
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
         "@types/bun": "^1.2.19",
         "@types/gapi": "^0.0.47",
-        "@types/google.picker": "^0.0.50",
+        "@types/google.picker": "^0.0.51",
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
         "concurrently": "^9.1.2",
@@ -75,7 +75,7 @@
     },
     "patchedDependencies": {
         "discord-api-types@0.37.120": "patches/discord-api-types@0.37.120.patch",
-        "@types/google.picker@0.0.50": "patches/@types%2Fgoogle.picker@0.0.50.patch",
+        "@types/google.picker@0.0.51": "patches/@types%2Fgoogle.picker@0.0.51.patch",
         "google-auth-library@10.1.0": "patches/google-auth-library@10.1.0.patch"
     }
 }
