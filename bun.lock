@@ -23,7 +23,7 @@
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.57.0",
-        "react-hook-form-mui": "^7.6.1",
+        "react-hook-form-mui": "^7.6.2",
         "react-icons": "^5.5.0",
         "valibot": "^1.1.0",
       },
@@ -951,7 +951,7 @@
 
     "react-hook-form": ["react-hook-form@7.57.0", "", { "peerDependencies": { "react": "^16.8.0 || ^17 || ^18 || ^19" } }, "sha512-RbEks3+cbvTP84l/VXGUZ+JMrKOS8ykQCRYdm5aYsxnDquL0vspsyNhGRO7pcH6hsZqWlPOjLye7rJqdtdAmlg=="],
 
-    "react-hook-form-mui": ["react-hook-form-mui@7.6.1", "", { "peerDependencies": { "@mui/icons-material": ">= 5.x <8", "@mui/material": ">= 5.x <8", "@mui/x-date-pickers": ">=7.17.0 <8", "react": ">=17 <20", "react-hook-form": ">=7.33.1" }, "optionalPeers": ["@mui/icons-material", "@mui/x-date-pickers"] }, "sha512-B6mYk+cK0i/mmh/oWqD/uNnGa+C2U6swRynubn4Hjcbmx/lwyjepODlGDiMMi4OEglgPtrPThxH8nEDyKNxCEA=="],
+    "react-hook-form-mui": ["react-hook-form-mui@7.6.2", "", { "peerDependencies": { "@mui/icons-material": ">= 5.x <8", "@mui/material": ">= 5.x <8", "@mui/x-date-pickers": ">=7.17.0 <8", "react": ">=17 <20", "react-hook-form": ">=7.33.1" }, "optionalPeers": ["@mui/icons-material", "@mui/x-date-pickers"] }, "sha512-mRzQHHxh45CD/89vxpTAGLeMYos78EmREG5J8TX4J2UOBT3gMUCPElp3Xr2b+ky1jI30UsqPEkQK44vThVSlkQ=="],
 
     "react-icons": ["react-icons@5.5.0", "", { "peerDependencies": { "react": "*" } }, "sha512-MEFcXdkP3dLo8uumGI5xN3lDFNsRtrjbOEKDLD7yv76v4wpnEq2Lt2qeHaQOr34I/wPN3s3+N08WkQ+CW37Xiw=="],
 
