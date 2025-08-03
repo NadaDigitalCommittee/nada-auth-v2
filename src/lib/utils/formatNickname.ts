@@ -43,10 +43,10 @@ export const formatNickname = (
     const warnings: Warning[] = []
     const formatted = template.replace(/%(.|$)/gu, (match: string) => {
         const specifier = match[1]
-        if (!specifier) return warnings.push(new UnexpectedEndOfInputWarning()), ""
+        if (!specifier) return (warnings.push(new UnexpectedEndOfInputWarning()), "")
         const formatSpecifierParseResult = v.safeParse(v.enum(FormatSpecifier), specifier)
         if (!formatSpecifierParseResult.success)
-            return warnings.push(new UnknownFormatSpecifierWarning(specifier)), ""
+            return (warnings.push(new UnknownFormatSpecifierWarning(specifier)), "")
         const formatSpecifier = formatSpecifierParseResult.output
         // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
         switch (formatSpecifier) {
@@ -71,7 +71,7 @@ export const formatNickname = (
                 }
                 break
             case NadaAcWorkSpaceUserType.Others:
-                return warnings.push(new UnavailableFormatSpecifierWarning(formatSpecifier)), ""
+                return (warnings.push(new UnavailableFormatSpecifierWarning(formatSpecifier)), "")
         }
     })
     return { formatted, warnings }
