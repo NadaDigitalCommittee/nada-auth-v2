@@ -65,7 +65,7 @@ export const roleTransformAction = v.rawTransform<string, Role[]>((ctx) => {
             return acc
         }, [])
     } catch (e) {
-        return ctx.addIssue(e as IssueInfo<string>), ctx.NEVER
+        return (ctx.addIssue(e as IssueInfo<string>), ctx.NEVER)
     }
 })
 /* eslint-enable @typescript-eslint/only-throw-error */
