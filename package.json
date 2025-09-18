@@ -33,7 +33,7 @@
         "@mui/material": "^6.4.12",
         "crypto-browserify": "^3.12.1",
         "decode-formdata": "^0.9.0",
-        "discord-api-types": "^0.37.120",
+        "discord-api-types": "^0.38.26",
         "discord-hono": "^0.16.4",
         "google-auth-library": "^10.1.0",
         "googleapis": "^154.0.0",
