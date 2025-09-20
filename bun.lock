@@ -16,7 +16,7 @@
         "crypto-browserify": "^3.12.1",
         "decode-formdata": "^0.9.0",
         "discord-api-types": "^0.37.120",
-        "discord-hono": "^0.16.4",
+        "discord-hono": "^0.19.6",
         "google-auth-library": "^10.1.0",
         "googleapis": "^154.0.0",
         "hono": "^4.7.11",
@@ -531,7 +531,7 @@
 
     "discord-api-types": ["discord-api-types@0.37.120", "", {}, "sha512-7xpNK0EiWjjDFp2nAhHXezE4OUWm7s1zhc/UXXN6hnFFU8dfoPHgV0Hx0RPiCa3ILRpdeh152icc68DGCyXYIw=="],
 
-    "discord-hono": ["discord-hono@0.16.4", "", {}, "sha512-r6efrXZ50Wn3uVYdySH2yHrx5tOhQGb2Ta1ITt6YyGKAPRiL4Sg/Xxew7aipkQdFpOTKaqc9VIVzAcTu6Wf48Q=="],
+    "discord-hono": ["discord-hono@0.19.6", "", {}, "sha512-DQH8ZLMThTdBaI5zxpBpYwVO8jjX69jvqwHIbN9Xm12njBMqwh7JrWNh+UcFd7mmyMdXkpdcwpFbHBX2wMgO4g=="],
 
     "doctrine": ["doctrine@2.1.0", "", { "dependencies": { "esutils": "^2.0.2" } }, "sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw=="],
 
